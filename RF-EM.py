@@ -3,11 +3,9 @@
 This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
 The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
 assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
-The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
-thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
 
 @License：
-Copyright (c) 2025 Xu Jiwei
+Copyright (c) 2025 Xu Jiwei @ permalab (https://permalab.science)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation

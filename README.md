@@ -1,12 +1,12 @@
-# Retrogressive Thaw Slump (RTS) Evolution Model
+# RTSEvo: Retrogressive Thaw Slump (RTS) Evolution Model
 
 ## Overview
 
-This repository contains the implementation of a dynamic evolution model for Retrogressive Thaw Slumps (RTS) in permafrost regions. Existing RTS modeling studies are largely confined to static susceptibility mapping, lacking the capacity to predict their spatiotemporal evolution. To bridge this gap, we developed a new dynamic RTS evolution model that couples three modules: (1) a time-series forecast of regional RTS area, (2) a machine-learning module for pixel-level probability mapping, and (3) a constrained spatial allocation module that simulates RTS expansion by integrating neighborhood effects, stochasticity, and a novel retrogressive erosion factor, representing a significant advancement from traditional static susceptibility assessments.
+This repository contains the implementation of a dynamic evolution model for Retrogressive Thaw Slumps (RTS)in permafrost regions, , known as RTSEvo. Existing RTS modeling studies are largely confined to static susceptibility mapping, lacking the capacity to predict their spatiotemporal evolution. To bridge this gap, we developed a new dynamic RTS evolution model that couples three modules: (1) a time-series forecast of regional RTS area, (2) a machine-learning module for pixel-level probability mapping, and (3) a constrained spatial allocation module that simulates RTS expansion by integrating neighborhood effects, stochasticity, and a novel retrogressive erosion factor, representing a significant advancement from traditional static susceptibility assessments.
 
 ## Research Paper
 
-The methodology is detailed in the paper "A Retrogressive Thaw Slump Evolution Model", which presents the first successful regional-scale dynamic simulation and short-term forecasting of RTS.
+The methodology is detailed in the paper "A Retrogressive Thaw Slump Evolution Model", which we submitted to Geoscientific Model Development for consideration of publication.
 
 ## System Requirements
 
@@ -253,7 +253,7 @@ For systems without GPU, the model falls back to optimized CPU vectorized comput
 If you use this code, please cite:
 
 ```
-***********************
+Jiwei Xu and Zhuotong Nan, RTSEvo (v1.0): A retrogressive thaw slump evolution model, https://github.com/nanzt/RTSEvo
 
 ```
 
@@ -263,4 +263,4 @@ MIT License - See individual script headers for full license text.
 
 ## Contact
 
-For questions or issues, please refer to the paper or contact the corresponding author at nanzt@njnu.edu.cn
+For questions or issues, please refer to the paper or contact the corresponding author at giscn@msn.com from permalab (https://permalab.science)
