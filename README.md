@@ -161,8 +161,8 @@ python "Parameter Calibration.py"
 
 **Optimal parameters from the study:**
 
--   **LR-EM:** N=3, neighborhood_weight=0.813, alpha=0.04, beta=0.161
--   **RF-EM:** N=3, neighborhood_weight=0.759, alpha=0.351, beta=0.498
+-   **LR-EM:** N=3, $\omega$=0.813, $\alpha$=0.04, $\beta$=0.161
+-   **RF-EM:** N=3, $\omega$=0.759, $\alpha$=0.351, $\beta$=0.498
 
 ### 4. Model Training and Simulation
 
