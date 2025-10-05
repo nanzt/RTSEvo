@@ -91,9 +91,9 @@ Calibrates spatial allocation module parameters for optimal model performance.
 
 **Purpose:**
 
--   Optimizes neighborhood size (N)
+-   Optimizes neighborhood size ($\omega$)
 -   Calibrates neighborhood weight
--   Tunes stochastic parameters (alpha, beta)
+-   Tunes stochastic parameters ($\alpha$, $\beta$)
 
 **Method:**
 
