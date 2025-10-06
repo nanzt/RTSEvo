@@ -1495,20 +1495,19 @@ def write_raster(array, profile, path):
         dst.write(array, 1)
 
 @cuda.jit
-def calculate_Erosion_effect_gpu(aspect, padded_landuse, Erosion_effect, rows, cols, N):
+def calculate_aspect_effect_gpu(aspect, padded_landuse, aspect_effect, rows, cols):
     i, j = cuda.grid(2)
     if i < rows and j < cols:
         center_aspect = aspect[i, j]
         if center_aspect < 0:
-            Erosion_effect[i, j] = 1.0
+            aspect_effect[i, j] = 1.0
             return
 
         total_weight = 0.0
         weighted_count = 0.0
-        pad_width = N // 2
 
-        for di in range(-pad_width, pad_width + 1):
-            for dj in range(-pad_width, pad_width + 1):
+        for di in range(-1, 2):
+            for dj in range(-1, 2):
                 if di == 0 and dj == 0: continue
                 row, col = i + di, j + dj
                 if 0 <= row < rows and 0 <= col < cols:
@@ -1516,80 +1515,77 @@ def calculate_Erosion_effect_gpu(aspect, padded_landuse, Erosion_effect, rows, c
                     dx = col - j
                     direction = math.degrees(math.atan2(dy, dx)) % 360
                     angle_diff = min(abs((center_aspect + 180) % 360 - direction),
-                                     360 - abs((center_aspect + 180) % 360 - direction))
-                    weight = math.cos(math.radians(angle_diff / 2))
-                    weighted_count += (padded_landuse[row + pad_width, col + pad_width] == RTS) * weight
+                                         360 - abs((center_aspect + 180) % 360 - direction))
+                    weight = math.cos(math.radians(angle_diff/2))
+                    weighted_count += (padded_landuse[row+1, col+1] == RTS) * weight
                     total_weight += weight
 
-        Erosion_effect[i, j] = weighted_count / (total_weight + 1e-10)
-
+        aspect_effect[i, j] = weighted_count / (total_weight + 1e-10)
 
 def calculate_neighborhood_effect_vectorized(padded_landuse, landuse, neighborhood_weight, N=3):
     neighborhoods = np.lib.stride_tricks.sliding_window_view(padded_landuse, (N, N))
     count_2 = np.sum(neighborhoods == RTS, axis=(2, 3)) - (landuse == RTS).astype(int)
-    valid_pixels = (N * N - 1)
+    valid_pixels = (N*N-1)
     return (count_2 * neighborhood_weight) / valid_pixels
 
+def calculate_aspect_effect_vectorized_cpu(landuse, aspect, rows, cols):
+    aspect_effect = np.zeros((rows, cols))
+    padded_landuse = np.pad(landuse, pad_width=1, mode='constant', constant_values=0)
 
-def calculate_Erosion_effect_vectorized_cpu(landuse, aspect, rows, cols, N=3):
-    Erosion_effect = np.zeros((rows, cols))
-    pad_width = N // 2
-    padded_landuse = np.pad(landuse, pad_width=pad_width, mode='constant', constant_values=0)
+    y, x = np.mgrid[0:rows, 0:cols]
 
-    for di in range(-pad_width, pad_width + 1):
-        for dj in range(-pad_width, pad_width + 1):
+    for di in [-1, 0, 1]:
+        for dj in [-1, 0, 1]:
             if di == 0 and dj == 0: continue
+            ny = y + di
+            nx = x + dj
+            valid = (ny >= 0) & (ny < rows) & (nx >= 0) & (nx < cols)
 
-            y_coords = np.arange(rows) + di
-            x_coords = np.arange(cols) + dj
-            valid_y = (y_coords >= 0) & (y_coords < rows)
-            valid_x = (x_coords >= 0) & (x_coords < cols)
+            dy = y[valid] - ny[valid]
+            dx = nx[valid] - x[valid]
+            direction = np.degrees(np.arctan2(dy, dx)) % 360
 
-            for i in range(rows):
-                if not valid_y[i]: continue
-                for j in range(cols):
-                    if not valid_x[j]: continue
+            center_aspect = aspect[y[valid], x[valid]]
+            angle_diff = np.minimum(
+                np.abs((center_aspect + 180) % 360 - direction),
+                360 - np.abs((center_aspect + 180) % 360 - direction)
+            )
 
-                    dy = i - (i + di)
-                    dx = (j + dj) - j
-                    direction = np.degrees(np.arctan2(dy, dx)) % 360
+            weight = (np.cos(np.radians(angle_diff/2)) + 1) / 2
 
-                    center_aspect = aspect[i, j]
-                    angle_diff = min(
-                        abs((center_aspect + 180) % 360 - direction),
-                        360 - abs((center_aspect + 180) % 360 - direction)
-                    )
+            aspect_effect[y[valid], x[valid]] += (
+                (padded_landuse[ny[valid]+1, nx[valid]+1] == RTS) * weight
+            )
 
-                    weight = np.cos(np.radians(angle_diff / 2))
+            aspect_effect[y[valid], x[valid]] += weight
 
-                    if padded_landuse[i + di + pad_width, j + dj + pad_width] == RTS:
-                        Erosion_effect[i, j] += weight
+    aspect_effect = np.where(aspect > 0,
+                           aspect_effect / (aspect_effect + 1e-10),
+                           1.0)
+    aspect_effect[aspect < 0] = 1.0
 
-    Erosion_effect = np.where(aspect > 0, Erosion_effect, 1.0)
-    Erosion_effect[aspect < 0] = 1.0
-
-    return Erosion_effect
+    return aspect_effect
 
 def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iterations=100,
-                            seed=None, neighborhood_weight=0.8, alpha=0.05, beta=0.3,
-                            N=3, use_gpu=True):
+                          seed=None, neighborhood_weight=0.8, use_gpu=True):
     if seed is not None:
         np.random.seed(seed)
 
     rows, cols = landuse.shape
-    pad_width = N // 2
 
-    # 初始检查
     initial_rts = np.sum(landuse == RTS)
+    print(f"initial RTS area: {initial_rts} (target area: {target_areas})")
     if initial_rts >= target_areas:
-        raise ValueError("The initial RTS area has exceeded the target area!！")
+        raise ValueError("The initial RTS area has exceeded the target area！")
 
     Dk_2 = 1.0
     current_area_2 = initial_rts
-    Gk_history = [target_areas - current_area_2]
+    Gk_history = []
+    Gk_current = target_areas - current_area_2
+    Gk_history.append(Gk_current)
 
-    Erosion_effect = np.zeros((rows, cols))
-    padded_landuse = np.pad(landuse, pad_width=pad_width, mode='constant', constant_values=0)
+    aspect_effect = np.zeros((rows, cols))
+    padded_landuse = np.pad(landuse, pad_width=1, mode='constant', constant_values=0)
 
     if use_gpu:
         threadsperblock = (16, 16)
@@ -1601,23 +1597,25 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
         new_landuse = landuse.copy()
 
         if use_gpu:
-            Erosion_effect_gpu = cuda.to_device(np.zeros((rows, cols)))
+            # GPU
+            aspect_effect_gpu = cuda.to_device(np.zeros((rows, cols)))
             padded_landuse_gpu = cuda.to_device(padded_landuse)
             aspect_gpu = cuda.to_device(aspect)
 
-            calculate_Erosion_effect_gpu[blockspergrid, threadsperblock](
-                aspect_gpu, padded_landuse_gpu, Erosion_effect_gpu, rows, cols, N)
-            Erosion_effect = Erosion_effect_gpu.copy_to_host()
+            calculate_aspect_effect_gpu[blockspergrid, threadsperblock](
+                aspect_gpu, padded_landuse_gpu, aspect_effect_gpu, rows, cols)
+            aspect_effect = aspect_effect_gpu.copy_to_host()
         else:
-            Erosion_effect = calculate_Erosion_effect_vectorized_cpu(landuse, aspect, rows, cols, N)
+            # CPU
+            aspect_effect = calculate_aspect_effect_vectorized_cpu(landuse, aspect, rows, cols)
 
         neighborhood_effect = calculate_neighborhood_effect_vectorized(
-            padded_landuse, landuse, neighborhood_weight, N)
+            padded_landuse, landuse, neighborhood_weight)
 
         R_i = np.random.rand(rows, cols)
-        RA_i = 1 + beta * ((-np.log(R_i)) ** alpha - 0.5)
+        RA_i = 1 + beta * ((-np.log(R_i))**alpha - 0.5)
 
-        combined_prob = prob_2 * Dk_2 * neighborhood_effect * Erosion_effect * RA_i
+        combined_prob = prob_2 * Dk_2 * neighborhood_effect * aspect_effect * RA_i
         combined_prob = np.clip(combined_prob, 0, 1)
 
         rand_matrix = np.random.rand(rows, cols)
@@ -1628,6 +1626,8 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
         Gk_current = target_areas - current_area_2
         Gk_history.append(Gk_current)
 
+        adjustment_type = "remain(initial iteration)"
+
         if len(Gk_history) >= 3:
             Gk_t_minus_2 = Gk_history[-3]
             Gk_t_minus_1 = Gk_history[-2]
@@ -1637,40 +1637,60 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
 
             if delta_current <= delta_prev:
                 Dk_2 = Dk_2
+                adjustment_type = "Maintain (convergence)"
             elif delta_current > 0 and delta_prev > 0:
                 adjustment_factor = abs(Gk_current) / (abs(Gk_t_minus_1) + 1e-10)
                 Dk_2 = Dk_2 * adjustment_factor
+                adjustment_type = f"Increase (development deficit exacerbated, coefficient{adjustment_factor:.3f}）"
             elif delta_current < 0 and delta_prev < 0:
                 adjustment_factor = abs(Gk_t_minus_1) / (abs(Gk_current) + 1e-10)
                 Dk_2 = Dk_2 * adjustment_factor
+                adjustment_type = f"Reduce (overdevelopment exacerbates, coefficient{adjustment_factor:.3f}）"
+            else:
+                Dk_2 = Dk_2
+                adjustment_type = "Keep (other cases)"
 
         Dk_2 = np.clip(Dk_2, 0.1, 10.0)
 
         if len(Gk_history) > 10:
             Gk_history.pop(0)
 
+        # Output iteration information
+        print(f"\niteration {iteration}:")
+        print(f"Number of converted pixels: {np.sum(mask_1_to_2)}")
+        print(f"Current RTS area: {current_area_2} (target: {target_areas})")
+        print(f"Remaining targets:: {Gk_current}")
+        print(f"Adaptive adjustment: {adjustment_type}")
+        print(f"Adaptive coefficient Dk_2: {Dk_2:.4f}")
+        print("-"*50)
+
         if current_area_2 >= target_areas:
+            print(f"Reach target area (iteration {iteration})")
             break
 
         landuse = new_landuse
-        padded_landuse = np.pad(landuse, pad_width=pad_width, mode='constant', constant_values=0)
+        padded_landuse = np.pad(landuse, pad_width=1, mode='constant', constant_values=0)
 
     return landuse
 
 
 def calculate_metrics(landuse_initial, landuse_simulated, landuse_actual):
     metrics = {}
+
     mask = (landuse_initial == NON_RTS)
     actual_change = ((landuse_initial == NON_RTS) & (landuse_actual == RTS)).astype(int)
     simulated_change = ((landuse_initial == NON_RTS) & (landuse_simulated == RTS)).astype(int)
+
     TP = np.sum((simulated_change == 1) & (actual_change == 1))
     FP = np.sum((simulated_change == 1) & (actual_change == 0))
     FN = np.sum((simulated_change == 0) & (actual_change == 1))
     TN = np.sum((simulated_change == 0) & (actual_change == 0))
     total_pixels = TP + FP + FN + TN
+
     if total_pixels > 0:
         hit_rate = TP / (TP + FN) if (TP + FN) > 0 else 0
         overall_accuracy = (TP + TN) / total_pixels
+
         p0 = overall_accuracy
         pe = (float(TP + FN) * float(TP + FP) + float(FP + TN) * float(FN + TN)) / (float(total_pixels) ** 2)
         kappa = (p0 - pe) / (1 - pe) if pe < 1 else 0
@@ -1681,11 +1701,17 @@ def calculate_metrics(landuse_initial, landuse_simulated, landuse_actual):
         fom = TP / (TP + FP + FN) if (TP + FP + FN) > 0 else 0
         denominator = np.sqrt((TP + FP) * (TP + FN))
         lps = TP / denominator if denominator > 0 else 0
+
         metrics.update({
             'change_TP': TP, 'change_FP': FP, 'change_FN': FN, 'change_TN': TN,
+            'hit_rate': hit_rate,
+            'change_overall_accuracy': overall_accuracy,
             'change_kappa': kappa,
+            'change_precision': precision,
+            'change_recall': recall,
+            'change_f1': f1,
             'change_fom': fom,
-
+            'change_lps': lps
         })
 
     TP_all = np.sum((landuse_simulated == RTS) & (landuse_actual == RTS))
@@ -1693,6 +1719,7 @@ def calculate_metrics(landuse_initial, landuse_simulated, landuse_actual):
     FN_all = np.sum((landuse_simulated == NON_RTS) & (landuse_actual == RTS))
     TN_all = np.sum((landuse_simulated == NON_RTS) & (landuse_actual == NON_RTS))
     total_pixels_all = TP_all + FP_all + FN_all + TN_all
+
     if total_pixels_all > 0:
         overall_accuracy_all = (TP_all + TN_all) / total_pixels_all
         p0_all = overall_accuracy_all
@@ -1705,8 +1732,11 @@ def calculate_metrics(landuse_initial, landuse_simulated, landuse_actual):
 
         metrics.update({
             'full_TP': TP_all, 'full_FP': FP_all, 'full_FN': FN_all, 'full_TN': TN_all,
+            'full_overall_accuracy': overall_accuracy_all,
             'full_kappa': kappa_all,
             'full_precision': precision_all,
+            'full_recall': recall_all,
+            'full_f1': f1_all
         })
 
     return metrics
@@ -1716,10 +1746,10 @@ def main():
     try:
         cuda.detect()
         use_gpu = True
-        print("GPU acceleration will be enabled as CUDA GPU is detected")
+        print("CUDA GPU detected, GPU acceleration will be used")
     except:
         use_gpu = False
-        print("vectorized computation on CPU will be used otherwise as no CUDA GPU is detected.")
+        print("No CUDA GPU detected, using CPU vectorized computations")
 
 
     landuse_2020, profile = read_raster(r'RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2020.tif')
@@ -1730,10 +1760,10 @@ def main():
 
     landuse_2021_actual, _ = read_raster(r"RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2021.tif")
 
-    output_dir = r"RTS-evolution model driven data\2021LR-CA_simulatedResult"
+    output_dir = r"RTS-evolution model driven data\RF-CA2020-2021"
     os.makedirs(output_dir, exist_ok=True)
 
-    print(f"\n===== Running simulation，seed={seed}, neighborhood weight={neighborhood_weight} =====")
+    print(f"\n===== Running simulation, seed={seed}, neighborhood weight={neighborhood_weight} =====")
 
     try:
         landuse_2021_predict = ca_simulation_optimized(
@@ -1750,10 +1780,10 @@ def main():
 
         output_path = os.path.join(output_dir, "2021RF-CA_Bestseed43.tif")
         write_raster(landuse_2021_predict, profile, output_path)
-        print(f"output: {output_path}")
+        print(f"result save: {output_path}")
 
     except ValueError as e:
-        print(f"error: {str(e)}")
+        print(f"Simulation error: {str(e)}")
 
 
 if __name__ == "__main__":
