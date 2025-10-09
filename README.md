@@ -2,11 +2,13 @@
 
 ## Overview
 
-This repository contains the implementation of a dynamic evolution model for Retrogressive Thaw Slumps (RTS)in permafrost regions, known as RTSEvo. Existing RTS modeling studies are largely confined to static susceptibility mapping, lacking the capacity to predict their spatiotemporal evolution. To bridge this gap, we developed a new dynamic RTS evolution model that couples three modules: (1) a time-series forecast of regional RTS area, (2) a machine-learning module for pixel-level probability mapping, and (3) a constrained spatial allocation module that simulates RTS expansion by integrating neighborhood effects, stochasticity, and a novel retrogressive erosion factor, representing a significant advancement from traditional static susceptibility assessments.
+This repository contains the implementation of RTSEvo, a dynamic evolution model for Retrogressive Thaw Slumps in permafrost regions. This framework moves beyond traditional static susceptibility assessments by simulating the spatiotemporal expansion of RTSs over time.
+
+RTSEvo couples three modules: (1) a time-series forecast of the total regional RTS area, (2) a machine-learning module for pixel-level occurrence probability, and (3) a constrained spatial allocation module that simulates expansion using neighborhood effects, stochasticity, and a novel, process-based retrogressive erosion factor.
 
 ## Research Paper
 
-The methodology is detailed in the paper "A Retrogressive Thaw Slump Evolution Model", which we submitted to Geoscientific Model Development for consideration of publication.
+The methodology, calibration, and validation of this model are detailed in our paper: "RTSEvo v1.0: A Retrogressive Thaw Slump Evolution Model" (Submitted to Geoscientific Model Development).
 
 ## System Requirements
 
@@ -46,11 +48,11 @@ The framework consists of three core modules:
 
 #### `LR-EM.py`
 
-Logistic Regression-based Evolution Model for RTS simulation.
+Logistic Regression version of the RTS Evolution Model. The main executable scripts for running the full RTSEvo simulation pipeline. They handle everything from data preprocessing and model training to the final spatial allocation and output generation.
 
 **Key Features:**
 
--   Processes multi-temporal RTS driving datasets (2016-2020)
+-   Processes multi-temporal RTS driving datasets
 -   Performs feature selection using Recursive Feature Elimination with Cross-Validation (RFECV)
 -   Optimizes hyperparameters using Latin Hypercube Sampling
 -   Generates RTS occurrence probability maps
@@ -65,9 +67,9 @@ python LR-EM.py
 
 **Inputs Required:**
 
--   Historical RTS raster data (2016-2020)
+-   Historical RTS raster data
 -   Environmental driving factors (DEM, slope, aspect, climate, geology, vegetation, permafrost characteristics)
--   Initial RTS distribution for simulation year
+-   Initial RTS distribution from a previous year to use as the starting point. For example, the study used the observed 2020 RTS distribution as the starting point to simulate the maps for 2021 and 2022.
 
 **Outputs:**
 
@@ -77,7 +79,7 @@ python LR-EM.py
 
 #### `RF-EM.py`
 
-Random Forest-based Evolution Model, similar structure to LR-EM but uses Random Forest classifier.
+Random Forest version of the RTS Evolution Model, similar structure to LR-EM but uses Random Forest classifier.
 
 **Key Differences:**
 
@@ -87,7 +89,7 @@ Random Forest-based Evolution Model, similar structure to LR-EM but uses Random 
 
 #### `Parameter Calibration.py`
 
-Calibrates spatial allocation module parameters for optimal model performance.
+A utility script to systematically find the optimal parameters for the spatial allocation module based on a user-defined reference year.
 
 **Purpose:**
 
@@ -97,7 +99,7 @@ Calibrates spatial allocation module parameters for optimal model performance.
 
 **Method:**
 
--   Uses 2020 RTS map as the reference for calibration
+-   Uses a user-defined reference RTS map for calibration
 -   Employs Latin Hypercube Sampling for efficient parameter space exploration
 -   Evaluates performance using Figure of Merit (FoM)
 
@@ -111,12 +113,12 @@ python "Parameter Calibration.py"
 
 #### `RTS areal demand forecasting.py`
 
-Implements Holt's linear trend method for forecasting total RTS area.
+A utility script to forecast the total area of new RTS growth needed for the simulation based on Holt's linear trend method.
 
 **Features:**
 
--   Trains on 2017-2020 data
--   Validates on 2021-2022 data
+-   Trains on historical data
+-   Validates on independent historical data
 -   Provides model evaluation metrics (MAPE, R²)
 
 **Usage:**
@@ -149,7 +151,7 @@ python "RTS areal demand forecasting.py"
 
 ```
 
-This generates area targets for simulation years (2021, 2022).
+This generates the total area of RTS for your simulation years based on the historical trend.
 
 ### 3. Parameter Calibration
 
@@ -158,6 +160,8 @@ This generates area targets for simulation years (2021, 2022).
 python "Parameter Calibration.py"
 
 ```
+
+This script uses a reference year from the historical data to tune the parameters.
 
 **Optimal parameters from the study:**
 
@@ -182,7 +186,7 @@ python RF-EM.py
 
 Both scripts will:
 
-1.  Load and preprocess multi-year data (2016-2020)
+1.  Load and preprocess multi-year data
 2.  Perform feature selection
 3.  Optimize machine learning model hyperparameters
 4.  Generate occurrence probability maps
@@ -252,9 +256,11 @@ For systems without GPU, the model falls back to optimized CPU vectorized comput
 
 ## Citation
 
-If you use this code, please cite:
+If you use this model or code in your research, please cite our paper and this repository:
 
 ```
+[Paper citation details - To be added upon publication]
+
 Jiwei Xu and Zhuotong Nan, RTSEvo (v1.0): A retrogressive thaw slump evolution model, https://github.com/nanzt/RTSEvo
 
 ```
@@ -265,4 +271,4 @@ MIT License - See individual script headers for full license text.
 
 ## Contact
 
-For questions or issues, please refer to the paper or contact the corresponding author at giscn@msn.com from permalab (https://permalab.science)
+For questions or issues, please open an issue on this GitHub repository or contact the corresponding author at giscn@msn.com from permalab (https://permalab.science)
