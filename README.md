@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the implementation of a dynamic evolution model for Retrogressive Thaw Slumps (RTS)in permafrost regions, , known as RTSEvo. Existing RTS modeling studies are largely confined to static susceptibility mapping, lacking the capacity to predict their spatiotemporal evolution. To bridge this gap, we developed a new dynamic RTS evolution model that couples three modules: (1) a time-series forecast of regional RTS area, (2) a machine-learning module for pixel-level probability mapping, and (3) a constrained spatial allocation module that simulates RTS expansion by integrating neighborhood effects, stochasticity, and a novel retrogressive erosion factor, representing a significant advancement from traditional static susceptibility assessments.
+This repository contains the implementation of a dynamic evolution model for Retrogressive Thaw Slumps (RTS)in permafrost regions, known as RTSEvo. Existing RTS modeling studies are largely confined to static susceptibility mapping, lacking the capacity to predict their spatiotemporal evolution. To bridge this gap, we developed a new dynamic RTS evolution model that couples three modules: (1) a time-series forecast of regional RTS area, (2) a machine-learning module for pixel-level probability mapping, and (3) a constrained spatial allocation module that simulates RTS expansion by integrating neighborhood effects, stochasticity, and a novel retrogressive erosion factor, representing a significant advancement from traditional static susceptibility assessments.
 
 ## Research Paper
 
@@ -97,7 +97,7 @@ Calibrates spatial allocation module parameters for optimal model performance.
 
 **Method:**
 
--   Uses 2020 RTS map as calibration reference
+-   Uses 2020 RTS map as the reference for calibration
 -   Employs Latin Hypercube Sampling for efficient parameter space exploration
 -   Evaluates performance using Figure of Merit (FoM)
 
@@ -221,7 +221,9 @@ The model incorporates process-based rules that simulate upslope (headward) retr
 
 ## Model Performance
 
-Based on Beiluhe Basin validation (2021-2022):
+We setup three experiments to test model performance. The related data can be accessed via figshare (https://doi.org/10.6084/m9.figshare.30317599). The study area is the Beiluhe basin, Qinghai-Tibet Plateau. 
+
+Based on the independent validation of RTS maps 2021 and 2022 on the study area,
 
 **LR-EM:**
 
@@ -233,7 +235,7 @@ Based on Beiluhe Basin validation (2021-2022):
 -   2021 FoM: 10.77%, Kappa: 94.87%
 -   2022 FoM: 8.78%, Kappa: 91.22%
 
-**Note:** Including the retrogressive erosion factor improves FoM by >22%
+We also found including the retrogressive erosion factor in the model improves FoM by up to 29.3%.
 
 ## GPU Acceleration
 
