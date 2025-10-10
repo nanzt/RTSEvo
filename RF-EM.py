@@ -1460,7 +1460,7 @@ X202021 = np.column_stack([
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
 
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), binary_variable.flatten()
+    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten()
 ])
 
 
