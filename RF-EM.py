@@ -3,9 +3,11 @@
 This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
 The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
 assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
+The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
+thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
 
 @License：
-Copyright (c) 2025 Xu Jiwei @ permalab (https://permalab.science)
+Copyright (c) 2025 Xu Jiwei
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -50,12 +52,6 @@ import math
 # Function to read raster data
 def read_raster(file_path):
     dataset = gdal.Open(file_path)
-    band = dataset.GetRasterBand(1)
-    return band.ReadAsArray()
-
-
-def read_raster(file_path):
-    dataset = gdal.Open(file_path)
     if dataset is None:
         raise FileNotFoundError(f"Cannot open file：{file_path}")
     band = dataset.GetRasterBand(1)
@@ -79,78 +75,83 @@ First, construct the RTS-driven dataset for 2016-2017
 # Read RTS-driven data for 2016-2017
 
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
-DEM = read_raster(r'RTS-evolution model driven data\continuous variables\DEM.tif')
-slope = read_raster(r'RTS-evolution model driven data\continuous variables\slope.tif')
+DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
+slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
-ping = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
-dong = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
-dongbei = read_raster(r'RTS-evolution model driven data\categorical variables\Northeast slope.tif')
-dongnan = read_raster(r'RTS-evolution model driven data\categorical variables\Southeast slope.tif')
-bei = read_raster(r'RTS-evolution model driven data\categorical variables\North slope.tif')
-xi = read_raster(r'RTS-evolution model driven data\categorical variables\west slope.tif')
-xibei = read_raster(r'RTS-evolution model driven data\categorical variables\Northwest slope.tif')
-xinan = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
-nan = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
+ping = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
+dong = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
+dongbei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
+dongnan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
+bei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
+xi = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
+xibei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
+xinan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
+nan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
 
-Profile_Curvature = read_raster(r'RTS-evolution model driven data\continuous variables\Profile Curvature.tif')
+Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-TWI = read_raster(r'RTS-evolution model driven data\continuous variables\TWI.tif')
-Distance_Lake = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTS-evolution model driven data\continuous variables\NDVI201609_201708mean.tif')
+TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
+Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
+NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201609_201708mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(r'RTS-evolution model driven data\continuous variables\201609_201708Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(r'RTS-evolution model driven data\continuous variables\201609_201708Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuous variables\201609_201708Maximum Summer Temperature.tif')
+precipitation_sum = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Cumulative Precipitation.tif')
+Max_Summer_Precipitation = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Maximum Summer Precipitation.tif')
+Max_Summer_Temperature = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Maximum Summer Temperature.tif')
 
 # Topography
-Distance_Faults = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Fault.tif')
+Distance_Faults = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Fault.tif')
 # soil_texture
-sand0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\sand0_5.tif')
-sand5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\sand5_15.tif')
-sand15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\sand15_30.tif')
-sand30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\sand30_60.tif')
-sand60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\sand60_100.tif')
-sand100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\sand100_200.tif')
-clay0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\clay0_5.tif')
-clay5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\clay5_15.tif')
-clay15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\clay15_30.tif')
-clay30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\clay30_60.tif')
-clay60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\clay60_100.tif')
-clay100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\clay100_200.tif')
-silt0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\silt0_5.tif')
-silt5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\silt5_15.tif')
-silt15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\silt15_30.tif')
-silt30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\silt30_60.tif')
-silt60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\silt60_100.tif')
-silt100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\silt100_200.tif')
+sand0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand0_5.tif')
+sand5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand5_15.tif')
+sand15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand15_30.tif')
+sand30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand30_60.tif')
+sand60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand60_100.tif')
+sand100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand100_200.tif')
+clay0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay0_5.tif')
+clay5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay5_15.tif')
+clay15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay15_30.tif')
+clay30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay30_60.tif')
+clay60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay60_100.tif')
+clay100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay100_200.tif')
+silt0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt0_5.tif')
+silt5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt5_15.tif')
+silt15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt15_30.tif')
+silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt30_60.tif')
+silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
+silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
+jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
-Distance_QTR = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Qinghai-Tibet Railway.tif')
+Distance_QTR = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Qinghai-Tibet Railway.tif')
 # LULC
-Bareland = read_raster(r'RTS-evolution model driven data\categorical variables\bareland.tif')
-grassland = read_raster(r'RTS-evolution model driven data\categorical variables\grassland.tif')
-meadow = read_raster(r'RTS-evolution model driven data\categorical variables\meadow.tif')
-water_body = read_raster(r'RTS-evolution model driven data\categorical variables\Water_body.tif')
-wetland = read_raster(r'RTS-evolution model driven data\categorical variables\Wetland.tif')
+Bareland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\bareland.tif')
+grassland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\grassland.tif')
+meadow = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\meadow.tif')
+water_body = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Water_body.tif')
+wetland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Wetland.tif')
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTS-evolution model driven data\continuous variables\201609_201708FDD.tif')
-TDD = read_raster(r'RTS-evolution model driven data\continuous variables\201609_201708TDD.tif')
-Ground_Ice = read_raster(r'RTS-evolution model driven data\continuous variables\Ground ice content.tif')
-ALT = read_raster(r'RTS-evolution model driven data\continuous variables\Active layer thickness.tif')
+FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708FDD.tif')
+TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708TDD.tif')
+Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
+ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTS-evolution model driven data\2016-2022Time raster\2016_2017.tif')
+Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2016_2017.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(r'RTS-evolution model driven data\2016-2022 RTS Expansion Raster\2016-2017expansion.tif')
+binary_variable = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2016-2017expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
@@ -302,13 +303,39 @@ y_clean201617 = y201617[~mask]
 # print("“After removing rows containing -9999:”")
 # print("X201617 shape:", X_clean201617.shape)
 # print("y201617 shape:", y_clean201617.shape)
+categorical_columns = [
+    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+]
+
+all_columns = [
+     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+    'TWI', 'Distance_Lake', 'NDVI',
+    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
+    'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
+    'FDD', 'TDD', 'Ground_Ice', 'ALT',
+    'Time'
+]
+
+non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
+non_categorical_indices = [all_columns.index(col) for col in non_categorical_columns]
+for idx in non_categorical_indices:
+    col = X_clean201617[:, idx]
+    col_min = np.min(col)
+    col_max = np.max(col)
+    X_clean201617[:, idx] = (col - col_min) / (col_max - col_min)
+
+
 
 """
 """
 # Read RTS-driven data for 2017-2018
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
-DEM = read_raster(r'RTS-evolution model driven data\continuous variables\DEM.tif')
-slope = read_raster(r'RTS-evolution model driven data\continuous variables\slope.tif')
+DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
+slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
 # ping = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
 # dong = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
@@ -320,39 +347,42 @@ slope = read_raster(r'RTS-evolution model driven data\continuous variables\slope
 # xinan = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
 # nan = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
 
-Profile_Curvature = read_raster(r'RTS-evolution model driven data\continuous variables\Profile Curvature.tif')
+Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-TWI = read_raster(r'RTS-evolution model driven data\continuous variables\TWI.tif')
-Distance_Lake = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTS-evolution model driven data\continuous variables\NDVI201709_201808mean.tif')
+TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
+Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
+NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201709_201808mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(r'RTS-evolution model driven data\continuous variables\201709_201808Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(r'RTS-evolution model driven data\continuous variables\201709_201808Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuous variables\201709_201808Maximum Summer Temperature.tif')
+precipitation_sum = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Cumulative Precipitation.tif')
+Max_Summer_Precipitation = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Maximum Summer Precipitation.tif')
+Max_Summer_Temperature = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Maximum Summer Temperature.tif')
 
 # Topography
-Distance_Faults = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Fault.tif')
+Distance_Faults = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Fault.tif')
 # soil_texture
-sand0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\sand0_5.tif')
-sand5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\sand5_15.tif')
-sand15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\sand15_30.tif')
-sand30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\sand30_60.tif')
-sand60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\sand60_100.tif')
-sand100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\sand100_200.tif')
-clay0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\clay0_5.tif')
-clay5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\clay5_15.tif')
-clay15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\clay15_30.tif')
-clay30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\clay30_60.tif')
-clay60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\clay60_100.tif')
-clay100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\clay100_200.tif')
-silt0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\silt0_5.tif')
-silt5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\silt5_15.tif')
-silt15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\silt15_30.tif')
-silt30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\silt30_60.tif')
-silt60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\silt60_100.tif')
-silt100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\silt100_200.tif')
+sand0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand0_5.tif')
+sand5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand5_15.tif')
+sand15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand15_30.tif')
+sand30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand30_60.tif')
+sand60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand60_100.tif')
+sand100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand100_200.tif')
+clay0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay0_5.tif')
+clay5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay5_15.tif')
+clay15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay15_30.tif')
+clay30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay30_60.tif')
+clay60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay60_100.tif')
+clay100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay100_200.tif')
+silt0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt0_5.tif')
+silt5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt5_15.tif')
+silt15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt15_30.tif')
+silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt30_60.tif')
+silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
+silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
 # jianying = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
 # ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
@@ -360,7 +390,8 @@ silt100_200 = read_raster(r'RTS-evolution model driven data\continuous variables
 # songsan = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
-Distance_QTR = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Qinghai-Tibet Railway.tif')
+Distance_QTR = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Qinghai-Tibet Railway.tif')
 # LULC
 # Bareland = read_raster(r'RTS-evolution model driven data\categorical variables\bareland.tif')
 # grassland = read_raster(r'RTS-evolution model driven data\categorical variables\grassland.tif')
@@ -369,16 +400,17 @@ Distance_QTR = read_raster(r'RTS-evolution model driven data\continuous variable
 # wetland = read_raster(r'RTS-evolution model driven data\categorical variables\Wetland.tif')
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTS-evolution model driven data\continuous variables\201709_201808FDD.tif')
-TDD = read_raster(r'RTS-evolution model driven data\continuous variables\201709_201808TDD.tif')
-Ground_Ice = read_raster(r'RTS-evolution model driven data\continuous variables\Ground ice content.tif')
-ALT = read_raster(r'RTS-evolution model driven data\continuous variables\Active layer thickness.tif')
+FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808FDD.tif')
+TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808TDD.tif')
+Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
+ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTS-evolution model driven data\2016-2022Time raster\2017_2018.tif')
+Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2017_2018.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(r'RTS-evolution model driven data\2016-2022 RTS Expansion Raster\2017-2018expansion.tif')
+binary_variable = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2017-2018expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
@@ -400,25 +432,20 @@ rasters = {
     "binary_variable": binary_variable
 }
 
-# 选择 DEM 作为参考栅格，用于确定全局掩膜的大小
 reference_raster = rasters["DEM"]
 
-# 遍历所有栅格数据，创建一个全局掩膜
 global_mask = np.zeros_like(reference_raster, dtype=bool)  # 初始化全局掩膜
 
 for key, raster in rasters.items():
-    # 创建当前栅格的掩膜
-    mask = (raster == -9999)
-    # 更新全局掩膜
-    global_mask |= mask  # 使用逻辑或操作符合并掩膜
 
-# 遍历所有栅格数据，将全局掩膜对应位置的值替换为 NaN
+    mask = (raster == -9999)
+
+    global_mask |= mask
+
 for key, raster in rasters.items():
-    # 确保栅格数据是浮点类型
-    raster = raster.astype(np.float32)  # 或者使用 np.float64
-    # 将全局掩膜对应位置的值替换为 NaN
+
+    raster = raster.astype(np.float32)
     raster[global_mask] = -9999
-    # 更新字典中的数据
     rasters[key] = raster
 
 # Update variables
@@ -535,6 +562,30 @@ y_clean201718 = y201718[~mask]
 # print("“After removing rows containing -9999:”")
 # print("X201718 shape:", X_clean201718.shape)
 # print("y201718 shape:", y_clean201718.shape)
+categorical_columns = [
+    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+]
+all_columns = [
+     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+    'TWI', 'Distance_Lake', 'NDVI',
+    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
+    'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
+    'FDD', 'TDD', 'Ground_Ice', 'ALT',
+    'Time'
+]
+non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
+non_categorical_indices = [all_columns.index(col) for col in non_categorical_columns]
+for idx in non_categorical_indices:
+    col = X_clean201718[:, idx]
+    col_min = np.min(col)
+    col_max = np.max(col)
+    X_clean201718[:, idx] = (col - col_min) / (col_max - col_min)
+
+
 
 """
 """
@@ -542,12 +593,15 @@ y_clean201718 = y201718[~mask]
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-NDVI = read_raster(r'RTS-evolution model driven data\continuous variables\NDVI201809_201908mean.tif')
+NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201809_201908mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(r'RTS-evolution model driven data\continuous variables\201809_201908Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(r'RTS-evolution model driven data\continuous variables\201809_201908Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuous variables\201809_201908Maximum Summer Temperature.tif')
+precipitation_sum = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Cumulative Precipitation.tif')
+Max_Summer_Precipitation = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Maximum Summer Precipitation.tif')
+Max_Summer_Temperature = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Maximum Summer Temperature.tif')
 
 # Topography
 # soil_texture
@@ -556,14 +610,15 @@ Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuou
 # LULC
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTS-evolution model driven data\continuous variables\201809_201908FDD.tif')
-TDD = read_raster(r'RTS-evolution model driven data\continuous variables\201809_201908TDD.tif')
+FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908FDD.tif')
+TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908TDD.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTS-evolution model driven data\2016-2022Time raster\2018_2019.tif')
+Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2018_2019.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(r'RTS-evolution model driven data\2016-2022 RTS Expansion Raster\2018-2019expansion.tif')
+binary_variable = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2018-2019expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
@@ -585,25 +640,17 @@ rasters = {
     "binary_variable": binary_variable
 }
 
-# 选择 DEM 作为参考栅格，用于确定全局掩膜的大小
 reference_raster = rasters["DEM"]
 
-# 遍历所有栅格数据，创建一个全局掩膜
-global_mask = np.zeros_like(reference_raster, dtype=bool)  # 初始化全局掩膜
+global_mask = np.zeros_like(reference_raster, dtype=bool)
 
 for key, raster in rasters.items():
-    # 创建当前栅格的掩膜
     mask = (raster == -9999)
-    # 更新全局掩膜
-    global_mask |= mask  # 使用逻辑或操作符合并掩膜
+    global_mask |= mask
 
-# 遍历所有栅格数据，将全局掩膜对应位置的值替换为 NaN
 for key, raster in rasters.items():
-    # 确保栅格数据是浮点类型
-    raster = raster.astype(np.float32)  # 或者使用 np.float64
-    # 将全局掩膜对应位置的值替换为 NaN
+    raster = raster.astype(np.float32)
     raster[global_mask] = -9999
-    # 更新字典中的数据
     rasters[key] = raster
 
 # Update variables
@@ -720,7 +767,29 @@ y_clean201819 = y201819[~mask]
 # print("“After removing rows containing -9999:”")
 # print("X201819 shape:", X_clean201819.shape)
 # print("y201819 shape:", y_clean201819.shape)
+categorical_columns = [
+    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+]
 
+all_columns = [
+     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+    'TWI', 'Distance_Lake', 'NDVI',
+    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
+    'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
+    'FDD', 'TDD', 'Ground_Ice', 'ALT',
+    'Time'
+]
+non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
+non_categorical_indices = [all_columns.index(col) for col in non_categorical_columns]
+for idx in non_categorical_indices:
+    col = X_clean201819[:, idx]
+    col_min = np.min(col)
+    col_max = np.max(col)
+    X_clean201819[:, idx] = (col - col_min) / (col_max - col_min)
 """
 
 """
@@ -728,12 +797,15 @@ y_clean201819 = y201819[~mask]
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-NDVI = read_raster(r'RTS-evolution model driven data\continuous variables\NDVI201909_202008mean.tif')
+NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201909_202008mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(r'RTS-evolution model driven data\continuous variables\201909_202008Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(r'RTS-evolution model driven data\continuous variables\201909_202008Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuous variables\201909_202008Maximum Summer Temperature.tif')
+precipitation_sum = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Cumulative Precipitation.tif')
+Max_Summer_Precipitation = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Maximum Summer Precipitation.tif')
+Max_Summer_Temperature = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Maximum Summer Temperature.tif')
 
 # Topography
 # soil_texture
@@ -742,14 +814,15 @@ Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuou
 # LULC
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTS-evolution model driven data\continuous variables\201909_202008FDD.tif')
-TDD = read_raster(r'RTS-evolution model driven data\continuous variables\201909_202008TDD.tif')
+FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008FDD.tif')
+TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008TDD.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTS-evolution model driven data\2016-2022Time raster\2019_2020.tif')
+Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2019_2020.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(r'RTS-evolution model driven data\2016-2022 RTS Expansion Raster\2019-2020expansion.tif')
+binary_variable = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2019-2020expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
@@ -772,7 +845,6 @@ rasters = {
 }
 
 reference_raster = rasters["DEM"]
-
 global_mask = np.zeros_like(reference_raster, dtype=bool)
 
 for key, raster in rasters.items():
@@ -1020,8 +1092,8 @@ time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
 groups = X_combined[:, time_index]
-X_notime = np.delete(X_combined, time_index, axis=1)  # 移除Time特征后的自变量
-y_notime = y_combined  # 因变量
+X_notime = np.delete(X_combined, time_index, axis=1)
+y_notime = y_combined
 
 X_train, X_test, y_train, y_test = train_test_split(X_notime, y_notime, test_size=0.3, random_state=42)
 # 1.Initialize the Random Forest classifier
@@ -1029,16 +1101,16 @@ rf = RandomForestClassifier(random_state=42)
 
 # 2. Create RFECV object
 #Using 10-fold cross-validation
-min_features_to_select = 1  # 至少保留1个特征
-cv = StratifiedKFold(10)  # 保持类别平衡的分层K折
+min_features_to_select = 1
+cv = StratifiedKFold(10)
 
 rfecv = RFECV(
     estimator=rf,
-    step=1,  # 每次迭代删除1个特征
+    step=1,
     cv=cv,
     scoring='accuracy',
     min_features_to_select=min_features_to_select,
-    n_jobs=-1  # 使用所有CPU核心
+    n_jobs=-1
 )
 
 # 3. Perform feature selection
@@ -1189,78 +1261,81 @@ rf_model.fit(X_selected, y_notime)
 read driven data 2020-2021 2021-2022
 """
 ## Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
-DEM = read_raster(r'RTS-evolution model driven data\continuous variables\DEM.tif')
-slope = read_raster(r'RTS-evolution model driven data\continuous variables\slope.tif')
+DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
+slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
-ping = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
-dong = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
-dongbei = read_raster(r'RTS-evolution model driven data\categorical variables\Northeast slope.tif')
-dongnan = read_raster(r'RTS-evolution model driven data\categorical variables\Southeast slope.tif')
-bei = read_raster(r'RTS-evolution model driven data\categorical variables\North slope.tif')
-xi = read_raster(r'RTS-evolution model driven data\categorical variables\west slope.tif')
-xibei = read_raster(r'RTS-evolution model driven data\categorical variables\Northwest slope.tif')
-xinan = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
-nan = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
+ping = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
+dong = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
+dongbei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
+dongnan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
+bei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
+xi = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
+xibei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
+xinan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
+nan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
 
-Profile_Curvature = read_raster(r'RTS-evolution model driven data\continuous variables\Profile Curvature.tif')
+Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-TWI = read_raster(r'RTS-evolution model driven data\continuous variables\TWI.tif')
-Distance_Lake = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTS-evolution model driven data\continuous variables\NDVI202009_202108mean.tif')
+TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
+Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
+NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI202009_202108mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(r'RTS-evolution model driven data\continuous variables\202009_202108Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(r'RTS-evolution model driven data\continuous variables\202009_202108Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(r'RTS-evolution model driven data\continuous variables\202009_202108Maximum Summer Temperature.tif')
+precipitation_sum = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Cumulative Precipitation.tif')
+Max_Summer_Precipitation = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Maximum Summer Precipitation.tif')
+Max_Summer_Temperature = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Maximum Summer Temperature.tif')
 
 # Topography
-Distance_Faults = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Fault.tif')
+Distance_Faults = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Fault.tif')
 # soil_texture
-sand0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\sand0_5.tif')
-sand5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\sand5_15.tif')
-sand15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\sand15_30.tif')
-sand30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\sand30_60.tif')
-sand60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\sand60_100.tif')
-sand100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\sand100_200.tif')
-clay0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\clay0_5.tif')
-clay5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\clay5_15.tif')
-clay15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\clay15_30.tif')
-clay30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\clay30_60.tif')
-clay60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\clay60_100.tif')
-clay100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\clay100_200.tif')
-silt0_5 = read_raster(r'RTS-evolution model driven data\continuous variables\silt0_5.tif')
-silt5_15 = read_raster(r'RTS-evolution model driven data\continuous variables\silt5_15.tif')
-silt15_30 = read_raster(r'RTS-evolution model driven data\continuous variables\silt15_30.tif')
-silt30_60 = read_raster(r'RTS-evolution model driven data\continuous variables\silt30_60.tif')
-silt60_100 = read_raster(r'RTS-evolution model driven data\continuous variables\silt60_100.tif')
-silt100_200 = read_raster(r'RTS-evolution model driven data\continuous variables\silt100_200.tif')
+sand0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand0_5.tif')
+sand5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand5_15.tif')
+sand15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand15_30.tif')
+sand30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand30_60.tif')
+sand60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand60_100.tif')
+sand100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand100_200.tif')
+clay0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay0_5.tif')
+clay5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay5_15.tif')
+clay15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay15_30.tif')
+clay30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay30_60.tif')
+clay60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay60_100.tif')
+clay100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay100_200.tif')
+silt0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt0_5.tif')
+silt5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt5_15.tif')
+silt15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt15_30.tif')
+silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt30_60.tif')
+silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
+silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
+jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
-Distance_QTR = read_raster(r'RTS-evolution model driven data\continuous variables\Distance from Qinghai-Tibet Railway.tif')
+Distance_QTR = read_raster(
+    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Qinghai-Tibet Railway.tif')
 # LULC
-Bareland = read_raster(r'RTS-evolution model driven data\categorical variables\bareland.tif')
-grassland = read_raster(r'RTS-evolution model driven data\categorical variables\grassland.tif')
-meadow = read_raster(r'RTS-evolution model driven data\categorical variables\meadow.tif')
-water_body = read_raster(r'RTS-evolution model driven data\categorical variables\Water_body.tif')
-wetland = read_raster(r'RTS-evolution model driven data\categorical variables\Wetland.tif')
+Bareland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\bareland.tif')
+grassland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\grassland.tif')
+meadow = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\meadow.tif')
+water_body = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Water_body.tif')
+wetland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Wetland.tif')
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTS-evolution model driven data\continuous variables\202009_202108FDD.tif')
-TDD = read_raster(r'RTS-evolution model driven data\continuous variables\202009_202108TDD.tif')
-Ground_Ice = read_raster(r'RTS-evolution model driven data\continuous variables\Ground ice content.tif')
-ALT = read_raster(r'RTS-evolution model driven data\continuous variables\Active layer thickness.tif')
+FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108FDD.tif')
+TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108TDD.tif')
+Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
+ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
 
-# The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTS-evolution model driven data\2016-2022Time raster\2020_2021.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(r'RTS-evolution model driven data\2016-2022 RTS Expansion Raster\2020-2021expansion.tif')
+binary_variable = read_raster(
+    r'RTSEvo model driving data and results/Experiment 2/inputs/2016-2022 RTS Expansion Raster\2020-2021expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
@@ -1277,7 +1352,6 @@ rasters = {
     "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "Time": Time,
     "binary_variable": binary_variable
 }
 
@@ -1349,8 +1423,8 @@ FDD = rasters["FDD"]
 TDD = rasters["TDD"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
-Time = rasters["Time"]
 
+binary_variable = rasters["binary_variable"]
 n_samples = DEM.shape[0] * DEM.shape[1]
 
 X202021 = np.column_stack([
@@ -1386,7 +1460,7 @@ X202021 = np.column_stack([
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
 
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
+    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), binary_variable.flatten()
 ])
 
 
@@ -1402,10 +1476,9 @@ mask = (X202021 == -9999).any(axis=1)
 X_clean202021 = X202021[~mask]
 y_clean202021 = y202021[~mask]
 
-print("删除包含 -9999 的行后：")
-print("X202122 的形状:", X_clean202021.shape)
-print("y202122 的形状:", y_clean202021.shape)
-
+print("After deleting rows that contain -9999：")
+print("X202122 shape:", X_clean202021.shape)
+print("y202122 shape:", y_clean202021.shape)
 
 
 def read_raster(file_path):
@@ -1430,13 +1503,14 @@ def save_raster(data, filename, transform, crs):
     ) as dst:
         dst.write(data, 1)
 time_index = feature_names.index('Time')
-X_notime202021 = np.delete(X_clean202021, time_index, axis=1)
+#X_notime202021 = np.delete(X_clean202021, time_index, axis=1)
+X_notime202021 = X_clean202021
 y_notime202021 = y_clean202021
 probabilities = rf_model.predict_proba(X_notime202021[:, support])
 
 # Reading the preprocessed DEM raster data through "Probability Grid Map Processing.py"
 DEM2 = read_raster(
-    r'RTS-evolution model driven data\Data preprocessing results\2020-2021Results\DEM.tif')
+     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM2.tif')
 mask2 = (DEM2 != -9999)
 
 # Create an array with the same shape as DEM2, with an initial value of -9999.
@@ -1449,16 +1523,16 @@ prob_y2[mask2] = probabilities[:, 1]
 
 # Read a reference raster file to obtain the transformation and coordinate reference system.
 with rasterio.open(
-        r'RTS-evolution model driven data\Data preprocessing results\2020-2021Results\DEM.tif') as src:
+        r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM2.tif') as src:
     transform = src.transform
     crs = src.crs
 
 #Save the probability raster files for non-RTS (y value of 1) and RTS (y value of 2) occurrences.
-save_raster(prob_y2, r'RF-CA2020-2021\RTS_occurrence20to21_1.tif',
+save_raster(prob_y2, r'RTSEvo model driving data and results\Experiment 2\outputs\RF occur 2020to2021.tif',
             transform, crs)
 
 #Taking the 2021 RTS simulation of LR-CA as an example
-aspect= read_raster(r'RTS-evolution model driven data\continuous variables\aspect.tif')
+aspect= read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\aspect.tif')
 rasters = {
     "aspect":aspect
 }
@@ -1477,7 +1551,6 @@ for key, raster in rasters.items():
     rasters[key] = raster
 aspect = rasters["aspect"]
 
-# set parameters
 seed = 43
 N = 3
 neighborhood_weight = 0.759
@@ -1587,6 +1660,7 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
     aspect_effect = np.zeros((rows, cols))
     padded_landuse = np.pad(landuse, pad_width=1, mode='constant', constant_values=0)
 
+    # 配置GPU
     if use_gpu:
         threadsperblock = (16, 16)
         blockspergrid_x = math.ceil(rows / threadsperblock[0])
@@ -1690,7 +1764,6 @@ def calculate_metrics(landuse_initial, landuse_simulated, landuse_actual):
     if total_pixels > 0:
         hit_rate = TP / (TP + FN) if (TP + FN) > 0 else 0
         overall_accuracy = (TP + TN) / total_pixels
-
         p0 = overall_accuracy
         pe = (float(TP + FN) * float(TP + FP) + float(FP + TN) * float(FN + TN)) / (float(total_pixels) ** 2)
         kappa = (p0 - pe) / (1 - pe) if pe < 1 else 0
@@ -1751,16 +1824,18 @@ def main():
         use_gpu = False
         print("No CUDA GPU detected, using CPU vectorized computations")
 
-
-    landuse_2020, profile = read_raster(r'RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2020.tif')
-    prob_2, _ = read_raster(r'RTS-evolution model driven data\Development  Probability of RTS\Random Forest-Based Probability of RTS Development from 2020 to 2021.tif')
+    landuse_2020, profile = read_raster(
+        r'RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\inputs\RTS2020.tif')
+    prob_2, _ = read_raster(
+        r'RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\inputs\RF occur prob for 2021.tif.tif')
     prob_2 = np.nan_to_num(prob_2, nan=0)
     prob_2 = np.clip(prob_2, 0, 1)
 
+    landuse_2021_actual, _ = read_raster(
+        r"RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\validation data\RTS2021.tif")
 
-    landuse_2021_actual, _ = read_raster(r"RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2021.tif")
+    output_dir = r"RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\outputs"
 
-    output_dir = r"RTS-evolution model driven data\RF-CA2020-2021"
     os.makedirs(output_dir, exist_ok=True)
 
     print(f"\n===== Running simulation, seed={seed}, neighborhood weight={neighborhood_weight} =====")
@@ -1788,4 +1863,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
