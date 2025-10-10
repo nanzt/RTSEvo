@@ -3,9 +3,11 @@
 This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
 The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
 assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
+The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
+thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
 
 @License：
-Copyright (c) 2025 Xu Jiwei @ permalab (https://permalab.science)
+Copyright (c) 2025 Xu Jiwei
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -44,7 +46,7 @@ def read_raster(file_path):
     band = dataset.GetRasterBand(1)
     return band.ReadAsArray()
 
-aspect= read_raster(r'RTS-evolution model driven data\continuous variables\aspect.tif')
+aspect= read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\aspect.tif')
 rasters = {
     "aspect":aspect
 }
@@ -298,14 +300,14 @@ def generate_latin_hypercube_samples(n_samples):
 def parameter_tuning():
     """Parameter Calibration Main Function"""
     landuse_2019, profile = read_raster(
-        r'RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2019.tif')
+        r'RTSEvo model driving data and results\Experiment 3\Calibration using 2020\inputs\RTS2019.tif')
     prob_2, _ = read_raster(
-        r'RTS-evolution model driven data\Development  Probability of RTS\Logistic Regression-Based Probability of RTS Development from 2019 to 2020.tif')
+        r'RTSEvo model driving data and results\Experiment 3\Calibration using 2020\inputs\LR occur prob for 2020.tif')
     prob_2 = np.nan_to_num(prob_2, nan=0)
     prob_2 = np.clip(prob_2, 0, 1)
 
     landuse_2020_actual, _ = read_raster(
-        r"RTS-evolution model driven data\RTS raster data from 2016 to 2022\RTS2020.tif")
+        r"RTSEvo model driving data and results\Experiment 3\Calibration using 2020\validation data\RTS2020.tif")
 
     try:
         cuda.detect()
@@ -329,7 +331,7 @@ def parameter_tuning():
 
     print(f"Starting parameter calibration, there are a total of {len(param_combinations)} parameter combinations...")
 
-    for i, (N, nw, alpha, beta, seed) in enumerate(tqdm(param_combinations, desc="参数率定进度")):
+    for i, (N, nw, alpha, beta, seed) in enumerate(tqdm(param_combinations, desc="Parameter Calibration Progress")):
         try:
             start_time = time.time()
 
@@ -373,7 +375,7 @@ def parameter_tuning():
 
     # Save the best results
     if best_landuse is not None:
-        output_dir = r"RTS-evolution model driven data\Simulation results of parameter calibration in 2020"
+        output_dir = r"RTSEvo model driving data and results\Experiment 3\Calibration using 2020\outputs"
         os.makedirs(output_dir, exist_ok=True)
 
         output_path = os.path.join(output_dir, "LR2020_optimized_best_result.tif")
