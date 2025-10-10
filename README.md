@@ -69,7 +69,7 @@ python LR-EM.py
 
 -   Historical RTS raster data
 -   Environmental driving factors (DEM, slope, aspect, climate, geology, vegetation, permafrost characteristics)
--   Initial RTS distribution from a previous year to use as the starting point. For example, the study used the observed 2020 RTS distribution as the starting point to simulate the maps for 2021 and 2022.
+-   Initial RTS distribution from a previous year to use as the starting point. For example, the study used the observed baseline RTS distribution as the starting point to simulate the feature RTS maps.
 
 **Outputs:**
 
@@ -156,7 +156,7 @@ This generates the total area of RTS for your simulation years based on the hist
 ### 3. Parameter Calibration
 
 ```python
-# Calibrate using 2020 as reference
+# Calibrate using reference RTS map 
 python "Parameter Calibration.py"
 
 ```
