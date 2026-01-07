@@ -78,15 +78,15 @@ First, construct the RTS-driven dataset for 2016-2017
 DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
 slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
-ping = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
-dong = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
-dongbei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
-dongnan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
-bei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
-xi = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
-xibei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
-xinan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
-nan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
+flat = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
+East = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
+Northeast = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
+Southeast = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
+North = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
+West = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
+Northwest = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
+Southwest = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
+South = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
 
 Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
@@ -154,8 +154,8 @@ binary_variable = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2016-2017expansion.tif')
 
 rasters = {
-    "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
-    "dongnan": dongnan, "bei": bei, "xi": xi, "xibei": xibei, "xinan": xinan, "nan": nan,
+    "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
+    "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
     "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
     "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
@@ -192,15 +192,15 @@ for key, raster in rasters.items():
 # Update variables
 DEM = rasters["DEM"]
 slope = rasters["slope"]
-ping = rasters["ping"]
-dong = rasters["dong"]
-dongbei = rasters["dongbei"]
-dongnan = rasters["dongnan"]
-bei = rasters["bei"]
-xi = rasters["xi"]
-xibei = rasters["xibei"]
-xinan = rasters["xinan"]
-nan = rasters["nan"]
+flat = rasters["flat"]
+East = rasters["East"]
+Northeast = rasters["Northeast"]
+Southeast = rasters["Southeast"]
+North = rasters["North"]
+West = rasters["West"]
+Northwest = rasters["Northwest"]
+Southwest = rasters["Southwest"]
+South = rasters["South"]
 
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
@@ -252,8 +252,8 @@ n_samples = DEM.shape[0] * DEM.shape[1]
 
 # Convert raster data into a feature matrix
 X201617 = np.column_stack([
-    DEM.flatten(), slope.flatten(), ping.flatten(), dong.flatten(), dongbei.flatten(),
-    dongnan.flatten(), bei.flatten(), xi.flatten(), xibei.flatten(), xinan.flatten(), nan.flatten(),
+    DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
+    Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
     TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
     precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
@@ -304,12 +304,12 @@ y_clean201617 = y201617[~mask]
 # print("X201617 shape:", X_clean201617.shape)
 # print("y201617 shape:", y_clean201617.shape)
 categorical_columns = [
-    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+    'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
    'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 
 all_columns = [
-     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+     'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
     'TWI', 'Distance_Lake', 'NDVI',
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
@@ -337,15 +337,15 @@ for idx in non_categorical_indices:
 DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
 slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
-# ping = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
-# dong = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
-# dongbei = read_raster(r'RTS-evolution model driven data\categorical variables\Northeast slope.tif')
-# dongnan = read_raster(r'RTS-evolution model driven data\categorical variables\Southeast slope.tif')
-# bei = read_raster(r'RTS-evolution model driven data\categorical variables\North slope.tif')
-# xi = read_raster(r'RTS-evolution model driven data\categorical variables\west slope.tif')
-# xibei = read_raster(r'RTS-evolution model driven data\categorical variables\Northwest slope.tif')
-# xinan = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
-# nan = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
+# flat = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
+# East = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
+# Northeast = read_raster(r'RTS-evolution model driven data\categorical variables\Northeast slope.tif')
+# Southeast = read_raster(r'RTS-evolution model driven data\categorical variables\Southeast slope.tif')
+# North = read_raster(r'RTS-evolution model driven data\categorical variables\North slope.tif')
+# West = read_raster(r'RTS-evolution model driven data\categorical variables\west slope.tif')
+# Northwest = read_raster(r'RTS-evolution model driven data\categorical variables\Northwest slope.tif')
+# Southwest = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
+# South = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
 
 Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
@@ -413,8 +413,8 @@ binary_variable = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2017-2018expansion.tif')
 
 rasters = {
-    "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
-    "dongnan": dongnan, "bei": bei, "xi": xi, "xibei": xibei, "xinan": xinan, "nan": nan,
+    "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
+    "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
     "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
     "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
@@ -434,7 +434,7 @@ rasters = {
 
 reference_raster = rasters["DEM"]
 
-global_mask = np.zeros_like(reference_raster, dtype=bool)  # 初始化全局掩膜
+global_mask = np.zeros_like(reference_raster, dtype=bool)  
 
 for key, raster in rasters.items():
 
@@ -451,15 +451,15 @@ for key, raster in rasters.items():
 # Update variables
 DEM = rasters["DEM"]
 slope = rasters["slope"]
-ping = rasters["ping"]
-dong = rasters["dong"]
-dongbei = rasters["dongbei"]
-dongnan = rasters["dongnan"]
-bei = rasters["bei"]
-xi = rasters["xi"]
-xibei = rasters["xibei"]
-xinan = rasters["xinan"]
-nan = rasters["nan"]
+flat = rasters["flat"]
+East = rasters["East"]
+Northeast = rasters["Northeast"]
+Southeast = rasters["Southeast"]
+North = rasters["North"]
+West = rasters["West"]
+Northwest = rasters["Northwest"]
+Southwest = rasters["Southwest"]
+South = rasters["South"]
 
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
@@ -511,8 +511,8 @@ n_samples = DEM.shape[0] * DEM.shape[1]
 
 # Convert raster data into a feature matrix
 X201718 = np.column_stack([
-    DEM.flatten(), slope.flatten(), ping.flatten(), dong.flatten(), dongbei.flatten(),
-    dongnan.flatten(), bei.flatten(), xi.flatten(), xibei.flatten(), xinan.flatten(), nan.flatten(),
+    DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
+    Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
     TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
     precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
@@ -563,11 +563,11 @@ y_clean201718 = y201718[~mask]
 # print("X201718 shape:", X_clean201718.shape)
 # print("y201718 shape:", y_clean201718.shape)
 categorical_columns = [
-    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+    'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
    'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 all_columns = [
-     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+     'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
     'TWI', 'Distance_Lake', 'NDVI',
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
@@ -621,8 +621,8 @@ binary_variable = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2018-2019expansion.tif')
 
 rasters = {
-    "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
-    "dongnan": dongnan, "bei": bei, "xi": xi, "xibei": xibei, "xinan": xinan, "nan": nan,
+    "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
+    "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
     "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
     "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
@@ -656,15 +656,15 @@ for key, raster in rasters.items():
 # Update variables
 DEM = rasters["DEM"]
 slope = rasters["slope"]
-ping = rasters["ping"]
-dong = rasters["dong"]
-dongbei = rasters["dongbei"]
-dongnan = rasters["dongnan"]
-bei = rasters["bei"]
-xi = rasters["xi"]
-xibei = rasters["xibei"]
-xinan = rasters["xinan"]
-nan = rasters["nan"]
+flat = rasters["flat"]
+East = rasters["East"]
+Northeast = rasters["Northeast"]
+Southeast = rasters["Southeast"]
+North = rasters["North"]
+West = rasters["West"]
+Northwest = rasters["Northwest"]
+Southwest = rasters["Southwest"]
+South = rasters["South"]
 
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
@@ -716,8 +716,8 @@ n_samples = DEM.shape[0] * DEM.shape[1]
 
 # Convert raster data into a feature matrix
 X201819 = np.column_stack([
-    DEM.flatten(), slope.flatten(), ping.flatten(), dong.flatten(), dongbei.flatten(),
-    dongnan.flatten(), bei.flatten(), xi.flatten(), xibei.flatten(), xinan.flatten(), nan.flatten(),
+    DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
+    Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
     TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
     precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
@@ -768,12 +768,12 @@ y_clean201819 = y201819[~mask]
 # print("X201819 shape:", X_clean201819.shape)
 # print("y201819 shape:", y_clean201819.shape)
 categorical_columns = [
-    'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan',
+    'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
    'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 
 all_columns = [
-     'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+     'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
     'TWI', 'Distance_Lake', 'NDVI',
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
@@ -825,8 +825,8 @@ binary_variable = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2019-2020expansion.tif')
 
 rasters = {
-    "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
-    "dongnan": dongnan, "bei": bei, "xi": xi, "xibei": xibei, "xinan": xinan, "nan": nan,
+    "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
+    "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
     "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
     "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
@@ -859,15 +859,15 @@ for key, raster in rasters.items():
 # Update variables
 DEM = rasters["DEM"]
 slope = rasters["slope"]
-ping = rasters["ping"]
-dong = rasters["dong"]
-dongbei = rasters["dongbei"]
-dongnan = rasters["dongnan"]
-bei = rasters["bei"]
-xi = rasters["xi"]
-xibei = rasters["xibei"]
-xinan = rasters["xinan"]
-nan = rasters["nan"]
+flat = rasters["flat"]
+East = rasters["East"]
+Northeast = rasters["Northeast"]
+Southeast = rasters["Southeast"]
+North = rasters["North"]
+West = rasters["West"]
+Northwest = rasters["Northwest"]
+Southwest = rasters["Southwest"]
+South = rasters["South"]
 
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
@@ -919,8 +919,8 @@ n_samples = DEM.shape[0] * DEM.shape[1]
 
 # Convert raster data into a feature matrix
 X201920 = np.column_stack([
-    DEM.flatten(), slope.flatten(), ping.flatten(), dong.flatten(), dongbei.flatten(),
-    dongnan.flatten(), bei.flatten(), xi.flatten(), xibei.flatten(), xinan.flatten(), nan.flatten(),
+    DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
+    Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
     TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
     precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
@@ -996,7 +996,7 @@ X201617_1 = X_clean201617[y_clean201617 == 1]
 y201617_1 = y_clean201617[y_clean201617 == 1]
 
 # Ensure the number of samples with value 1 is less than or equal to the number of samples with value 0
-assert num_ones <= len(X201617_0), "1 值样本数量不能大于 0 值样本数量"
+assert num_ones <= len(X201617_0)
 
 # Downsample the samples with value 0 to equal the number of samples with value 1
 X201617_0_downsampled, y201617_0_downsampled = resample(X201617_0, y201617_0, n_samples=num_ones, random_state=42)
@@ -1076,7 +1076,7 @@ print("Category distribution:", dict(zip(unique, counts)))
 
 # List of feature names (ensure consistency with the column order of X_combined)
 feature_names = [
-    'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+    'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
     'TWI', 'Distance_Lake', 'NDVI',
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
@@ -1092,7 +1092,7 @@ time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
 groups = X_combined[:, time_index]
-X_notime = np.delete(X_combined, time_index, axis=1)
+X_notime = np.delete(X_combined, time_index, aWests=1)
 y_notime = y_combined
 
 X_train, X_test, y_train, y_test = train_test_split(X_notime, y_notime, test_size=0.3, random_state=42)
@@ -1117,7 +1117,7 @@ rfecv = RFECV(
 rfecv.fit(X_train, y_train)
 
 Features_names = [
-    "DEM", "slope", "ping", "dong", "dongbei", "dongnan", "bei", "xi", "xibei", "xinan","nan",
+    "DEM", "slope", "flat", "East", "Northeast", "Southeast", "North", "West", "Northwest", "Southwest","South",
     "Profile_Curvature", "TWI", "Distance_Lake", "NDVI", "precipitation_sum",
     "Max_Summer_Precipitation", "Max_Summer_Temperature", "Distance_Faults",
    'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
@@ -1176,8 +1176,8 @@ time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
 groups = X_combined[:, time_index]
-X_notime = np.delete(X_combined, time_index, axis=1)  # 移除Time特征后的自变量
-y_notime = y_combined  # 因变量
+X_notime = np.delete(X_combined, time_index, axis=1)  
+y_notime = y_combined  
 X_selected = X_notime[:, support]
 
 # Split the training set and test set
@@ -1227,7 +1227,7 @@ print("best_score：", best_score)
 
 #Plot development probability map
 feature_names = [
-    'DEM', 'Slope', 'Ping', 'Dong', 'Dongbei', 'Dongnan', 'Bei', 'Xi', 'Xibei', 'Xinan', 'Nan', 'Profile_Curvature',
+    'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
     'TWI', 'Distance_Lake', 'NDVI',
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5', 'sand5_15', 'sand15_30', 'sand30_60', 'sand60_100', 'sand100_200',
@@ -1264,15 +1264,15 @@ read driven data 2020-2021 2021-2022
 DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
 slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
 #aspect
-ping = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
-dong = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
-dongbei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
-dongnan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
-bei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
-xi = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
-xibei = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
-xinan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
-nan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
+flat = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\flat slope.tif')
+East = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\East slope.tif')
+Northeast = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northeast slope.tif')
+Southeast = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southeast slope.tif')
+North = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\North slope.tif')
+West = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\west slope.tif')
+Northwest = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Northwest slope.tif')
+Southwest = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Southwest slope.tif')
+South = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\South slope.tif')
 
 Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
 
@@ -1338,8 +1338,8 @@ binary_variable = read_raster(
     r'RTSEvo model driving data and results/Experiment 2/inputs/2016-2022 RTS Expansion Raster\2020-2021expansion.tif')
 
 rasters = {
-    "DEM": DEM, "slope": slope, "ping": ping, "dong": dong, "dongbei": dongbei,
-    "dongnan": dongnan, "bei": bei, "xi": xi, "xibei": xibei, "xinan": xinan, "nan": nan,
+    "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
+    "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
     "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
     "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
@@ -1371,15 +1371,15 @@ for key, raster in rasters.items():
 
 DEM = rasters["DEM"]
 slope = rasters["slope"]
-ping = rasters["ping"]
-dong = rasters["dong"]
-dongbei = rasters["dongbei"]
-dongnan = rasters["dongnan"]
-bei = rasters["bei"]
-xi = rasters["xi"]
-xibei = rasters["xibei"]
-xinan = rasters["xinan"]
-nan = rasters["nan"]
+flat = rasters["flat"]
+East = rasters["East"]
+Northeast = rasters["Northeast"]
+Southeast = rasters["Southeast"]
+North = rasters["North"]
+West = rasters["West"]
+Northwest = rasters["Northwest"]
+Southwest = rasters["Southwest"]
+South = rasters["South"]
 
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
@@ -1429,8 +1429,8 @@ n_samples = DEM.shape[0] * DEM.shape[1]
 
 X202021 = np.column_stack([
 
-    DEM.flatten(), slope.flatten(), ping.flatten(), dong.flatten(), dongbei.flatten(),
-    dongnan.flatten(), bei.flatten(), xi.flatten(), xibei.flatten(), xinan.flatten(), nan.flatten(),
+    DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
+    Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
 
     TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
