@@ -133,11 +133,11 @@ try:
     print(f"\nSuccessfully processed {len(df)} files:")
     print(df[['year', 'area', 'filename', 'data_type']])
 
-    # 根据数据类型分割数据
+
     train_data = df[df['data_type'] == 'train'].copy()
     test_data = df[df['data_type'] == 'validation'].copy()
 
-    # 检查数据完整性
+
     expected_train_years = [2016, 2017, 2018, 2019, 2020]
     expected_test_years = [2021, 2022]
 
@@ -171,11 +171,10 @@ try:
 
     fitted_values = model.fittedvalues
 
-    # 预测
+
     forecast_years = len(test_data)
     forecast = model.forecast(steps=forecast_years)
 
-    # 计算评估指标
     mae_train = mean_absolute_error(ts_train, fitted_values)
     rmse_train = np.sqrt(mean_squared_error(ts_train, fitted_values))
     mape_train = np.mean(np.abs((ts_train - fitted_values) / ts_train)) * 100
@@ -244,15 +243,15 @@ try:
 
     print(f"Training R²: {r_squared_train:.4f} ({assess_performance(r_squared_train)})")
 
-    # ==================== 保存结果到Excel文件 ====================
+
     print("\n" + "=" * 60)
     print("SAVING RESULTS TO EXCEL FILE")
     print("=" * 60)
 
-    # 创建结果DataFrame
+
     results_df = pd.DataFrame()
 
-    # 训练期结果
+
     train_results = pd.DataFrame({
         'Year': train_data['year'],
         'Actual_Area': train_data['area'],
@@ -262,7 +261,7 @@ try:
         'Data_Type': 'Training'
     })
 
-    # 测试期结果
+
     if len(test_data) > 0:
         test_results = pd.DataFrame({
             'Year': test_data['year'],
