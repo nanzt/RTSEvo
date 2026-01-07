@@ -179,10 +179,10 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
     rows, cols = landuse.shape
     pad_width = N // 2
 
-    # 初始检查
+
     initial_rts = np.sum(landuse == RTS)
     if initial_rts >= target_areas:
-        raise ValueError("The initial RTS area has exceeded the target area!！")
+        raise ValueError("The initial RTS area has exceeded the target area!")
 
     Dk_2 = 1.0
     current_area_2 = initial_rts
