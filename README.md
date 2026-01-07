@@ -1,46 +1,44 @@
-# RTSEvo: Retrogressive Thaw Slump (RTS) Evolution Model
+# RTSEvo v1.0: Retrogressive Thaw Slump Evolution Model
 
 ## Overview
-
-This repository contains the implementation of RTSEvo, a dynamic evolution model for Retrogressive Thaw Slumps in permafrost regions. This framework moves beyond traditional static susceptibility assessments by simulating the spatiotemporal expansion of RTSs over time.
-
+RTSEvo is a dynamic evolution model for simulating the spatiotemporal expansion of Retrogressive Thaw Slumps (RTS) in permafrost regions. This framework integrates machine learning with cellular automata to move beyond traditional static susceptibility assessments, enabling regional-scale dynamic simulation and short-term forecasting.
 RTSEvo couples three modules: (1) a time-series forecast of the total regional RTS area, (2) a machine-learning module for pixel-level occurrence probability, and (3) a constrained spatial allocation module that simulates expansion using neighborhood effects, stochasticity, and a novel, process-based retrogressive erosion factor.
 
 ## Research Paper
 
 The methodology, calibration, and validation of this model are detailed in our paper: "RTSEvo v1.0: A Retrogressive Thaw Slump Evolution Model" (Submitted to Geoscientific Model Development).
 
-## System Requirements
-
-### Hardware
-
--   CUDA-capable GPU (optional but recommended for faster computation)
-
-
-### Software Dependencies
-
-```
-numpy
-pandas
-matplotlib
-scikit-learn
-rasterio
-gdal (osgeo)
-statsmodels
-pyDOE
-numba
-joblib
-tqdm
-
-```
-
 ## Model Architecture
 
 The framework consists of three core modules:
 
-1.  **RTS Areal Demand Forecasting** - Projects total RTS area using Holt's linear trend method
-2.  **Base Occurrence Probability Mapping** - Uses machine learning (Logistic Regression or Random Forest) to calculate pixel-level RTS initiation probability
-3.  **Constrained Spatial Allocation** - Simulates RTS expansion through cellular automata with neighborhood effects, retrogressive erosion factors, and stochastic components
+### 1. RTS Areal Demand Forecasting Module
+Projects total RTS area using Holt's linear trend method based on historical time series data.
+
+### 2. Base Occurrence Probability Mapping Module
+Calculates pixel-level RTS initiation probability using:
+- **Logistic Regression** (`LR-EM.py`)
+- **Random Forest** (`RF-EM.py`)
+
+### 3. Constrained Spatial Allocation Module
+Simulates RTS expansion through cellular automata with:
+- **Neighborhood effect**: Density-dependent growth
+- **Retrogressive erosion factor**: Process-based directional preference
+- **Stochastic component**: Random variability
+- **Adaptive inertia**: Dynamic constraint to match areal demand
+
+**Mathematical formulation**:
+```
+P_Total= P_base × U × Erosion × RA × Inertia
+```
+
+Where:
+- P_base: Base occurrence probability from ML
+- U: Neighborhood effect
+- Erosion: Retrogressive erosion factor
+- RA: Stochastic factor
+- Inertia: Adaptive inertia coefficient
+
 
 ## File Descriptions
 
@@ -62,7 +60,6 @@ Logistic Regression version of the RTS Evolution Model. The main executable scri
 
 ```python
 python LR-EM.py
-
 ```
 
 **Inputs Required:**
@@ -93,9 +90,9 @@ A utility script to systematically find the optimal parameters for the spatial a
 
 **Purpose:**
 
--   Optimizes neighborhood size ($\omega$)
+-   Optimizes neighborhood size 
 -   Calibrates neighborhood weight
--   Tunes stochastic parameters ($\alpha$, $\beta$)
+-   Tunes stochastic parameters 
 
 **Method:**
 
@@ -107,9 +104,7 @@ A utility script to systematically find the optimal parameters for the spatial a
 
 ```python
 python "Parameter Calibration.py"
-
 ```
-
 
 #### `RTS areal demand forecasting.py`
 
@@ -125,7 +120,6 @@ A utility script to forecast the total area of new RTS growth needed for the sim
 
 ```python
 python "RTS areal demand forecasting.py"
-
 ```
 
 ## Workflow
@@ -148,7 +142,6 @@ Ensure all driving factor rasters are at 10m resolution with consistent projecti
 ```python
 # Run the forecasting model
 python "RTS areal demand forecasting.py"
-
 ```
 
 This generates the total area of RTS for your simulation years based on the historical trend.
@@ -158,7 +151,6 @@ This generates the total area of RTS for your simulation years based on the hist
 ```python
 # Calibrate using reference RTS map 
 python "Parameter Calibration.py"
-
 ```
 
 This script uses a reference year from the historical data to tune the parameters.
@@ -174,14 +166,12 @@ This script uses a reference year from the historical data to tune the parameter
 
 ```python
 python LR-EM.py
-
 ```
 
 #### For Random Forest model:
 
 ```python
 python RF-EM.py
-
 ```
 
 Both scripts will:
@@ -193,39 +183,9 @@ Both scripts will:
 5.  Run evolution model simulation
 6.  Output simulated RTS distributions
 
-## Key Model Components
-
-### Cellular Automata Rules
-
-The spatial allocation uses the following transition probability:
-
-```
-P_Total = P_base × U × Erosion × RA × Inertia
-
-```
-
-Where:
-
--   **P_base:** Base occurrence probability from ML model
--   **U:** Neighborhood effect (density of RTS in surrounding window)
--   **Erosion:** Retrogressive erosion factor (directional growth preference)
--   **RA:** Stochastic factor (random variability)
--   **Inertia:** Adaptive coefficient to match area demand
-
-### Retrogressive Erosion Factor
-
-The model incorporates process-based rules that simulate upslope (headward) retreat:
-
-```python
-# Calculates directional weights based on slope aspect
-# Favors growth opposite to slope direction
-# Critical for capturing RTS morphology
-
-```
-
 ## Model Performance
 
-We setup three experiments to test model performance. The related data can be accessed via figshare (https://doi.org/10.6084/m9.figshare.30317599). The study area is the Beiluhe basin, Qinghai-Tibet Plateau. 
+We setup three experiments to test model performance. The study area is the Beiluhe basin, Qinghai-Tibet Plateau. 
 
 Based on the independent validation of RTS maps 2021 and 2022 on the study area,
 
@@ -241,18 +201,6 @@ Based on the independent validation of RTS maps 2021 and 2022 on the study area,
 
 We also found including the retrogressive erosion factor in the model improves FoM by up to 29.3%.
 
-## GPU Acceleration
-
-The model supports CUDA GPU acceleration for faster computation:
-
-For systems without GPU, the model falls back to optimized CPU vectorized computation.
-
-## Output Files
-
--   **Probability maps:** GeoTIFF format probability rasters (0-1 scale)
--   **Simulated RTS distributions:** GeoTIFF with values 1 (non-RTS) and 2 (RTS)
--   **Parameter tuning results:** CSV files with performance metrics
--   **Model evaluation metrics:** Console output with FoM, Kappa, Moran's I
 
 ## Citation
 
@@ -262,7 +210,6 @@ If you use this model or code in your research, please cite our paper and this r
 [Paper citation details - To be added upon publication]
 
 Jiwei Xu and Zhuotong Nan, RTSEvo (v1.0): A retrogressive thaw slump evolution model, https://github.com/nanzt/RTSEvo
-
 ```
 
 ## License
