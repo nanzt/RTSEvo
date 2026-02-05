@@ -189,15 +189,13 @@ We setup three experiments to test model performance. The study area is the Beil
 
 Based on the independent validation of RTS maps 2021 and 2022 on the study area,
 
-**LR-EM:**
 
--   2021 FoM: 12.00%, Kappa: 94.79%
--   2022 FoM: 8.88%, Kappa: 91.51%
-
-**RF-EM:**
-
--   2021 FoM: 10.77%, Kappa: 94.87%
--   2022 FoM: 8.78%, Kappa: 91.22%
+| Year | Model   | FoM    | Kappa  | F1 Score | Moran's I |
+|------|---------|--------|--------|----------|-----------|
+| 2021 | LR-EM   | 12.00% | 94.79% | 95.74%   | 0.616     |
+| 2021 | RF-EM   | 10.77% | 94.87% | 95.08%   | 0.613     |
+| 2022 | LR-EM   | 8.88%  | 91.51% | 91.89%   | 0.631     |
+| 2022 | RF-EM   | 8.78%  | 91.22% | 91.61%   | 0.631     |
 
 We also found including the retrogressive erosion factor in the model improves FoM by up to 29.3%.
 
