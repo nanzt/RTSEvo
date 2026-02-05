@@ -25,11 +25,11 @@
 from osgeo import gdal
 import rasterio
 import numpy as np
-from sklearn.feature_selection import RFECV
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import RFECV
 from sklearn.model_selection import GroupKFold, StratifiedKFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from pyDOE import lhs
@@ -1137,6 +1137,7 @@ support = rfecv.support_
 
 
 
+
 time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
@@ -1164,7 +1165,7 @@ continuous_params = ['C', 'max_iter']
 categorical_params = ['solver', 'penalty']
 
 # Generate Latin Hypercube Samples
-n_samples = 2
+n_samples = 100
 n_continuous_params = len(continuous_params)
 lhs_samples = lhs(n_continuous_params, samples=n_samples, criterion='maximin')
 
@@ -1253,9 +1254,9 @@ X_notime = np.delete(X_combined, time_index, axis=1)
 y_notime = y_combined
 
 
-# 获取特征索引并提取数据
 feature_indices = [Features_names.index(f) for f in selected_features]
 X_selected = X_notime[:, feature_indices]
+
 
 selected_features = selected_features_names
 X_selected = X_notime[:, rfecv.support_]
