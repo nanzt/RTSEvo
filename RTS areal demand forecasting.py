@@ -1,3 +1,15 @@
+"""
+@Description: RTSEvo v1.0 - Module 1: RTS Areal Demand Forecasting
+
+    This module implements the first core component of the RTSEvo framework: forecasting the
+    total regional RTS area for target years. It establishes a top-down, macro-scale constraint
+    that governs the overall magnitude of RTS expansion in the spatial allocation module.
+
+@Date: 2026-2-5
+
+@Website: https://permalab.science
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
