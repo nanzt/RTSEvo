@@ -46,7 +46,6 @@ import numba
 from numba import cuda
 import math
 
-
 # Function to read raster data
 def read_raster(file_path):
     dataset = gdal.Open(file_path)
