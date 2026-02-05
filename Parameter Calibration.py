@@ -1,10 +1,14 @@
 """
-@Description：
-This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
-The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
-assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
-The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
-thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
+@Description: RTSEvo v1.0 - Parameter Calibration Module for Constrained Spatial Allocation
+
+    This module implements the systematic parameter optimization procedure for the Constrained
+    Spatial Allocation component of the RTSEvo model. It employs Latin Hypercube Sampling (LHS)
+    to efficiently explore the multi-dimensional parameter space and identify optimal configurations
+    that maximize simulation accuracy.
+
+@Date: 2026-2-5
+
+@Website: https://permalab.science
 """
 from osgeo import gdal
 import rasterio
