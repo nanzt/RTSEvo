@@ -1090,7 +1090,7 @@ time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
 groups = X_combined[:, time_index]
-X_notime = np.delete(X_combined, time_index, aWests=1)
+X_notime = np.delete(X_combined, time_index, axis=1)
 y_notime = y_combined
 
 X_train, X_test, y_train, y_test = train_test_split(X_notime, y_notime, test_size=0.3, random_state=42)
