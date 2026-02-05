@@ -1658,7 +1658,6 @@ def ca_simulation_optimized(landuse, prob_2, aspect, target_areas, max_iteration
     aspect_effect = np.zeros((rows, cols))
     padded_landuse = np.pad(landuse, pad_width=1, mode='constant', constant_values=0)
 
-    # 配置GPU
     if use_gpu:
         threadsperblock = (16, 16)
         blockspergrid_x = math.ceil(rows / threadsperblock[0])
