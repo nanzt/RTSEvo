@@ -1,10 +1,26 @@
 """
-@Description：
-This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
-The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
-assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
-The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
-thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
+@Description: RTSEvo v1.0 - Random Forest-based Evolution Model (LR-EM)
+
+    'RF-EM.py' integrates three core components:
+    1. Feature Engineering and Machine Learning Module:
+       - Recursive Feature Elimination with Cross-Validation (RFECV) for optimal feature selection
+       - Random Forest classifier with Latin Hypercube Sampling (LHS) for hyperparameter optimization
+       - Multi-period training approach (2016-2020) capturing temporal dynamics of RTS expansion
+
+    2. Base Occurrence Probability Mapping:
+
+    3. Constrained Spatial Allocation Module:
+       - Cellular Automata (CA) framework for iterative RTS expansion simulation
+       - Four dynamic factors integrated in total transition probability:
+         a) Base occurrence probability (from Random Forest)
+         b) Neighborhood effect (spatial contagion within N×N window)
+         c) Retrogressive erosion factor (directional headwall retreat based on slope aspect)
+         d) Stochastic factor
+       - Adaptive inertia coefficient ensuring target area demand is met
+
+@Date: 2026-2-5
+
+@Website: https://permalab.science
 """
 from osgeo import gdal
 import rasterio
@@ -109,10 +125,10 @@ silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inp
 silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
 silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
+hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+weak_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+semi_hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+loose_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
 Distance_QTR = read_raster(
@@ -149,8 +165,8 @@ rasters = {
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
     "Time": Time,
@@ -216,10 +232,10 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
@@ -260,8 +276,8 @@ X201617 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
     FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
@@ -289,7 +305,7 @@ y_clean201617 = y201617[~mask]
 # print("y201617 shape:", y_clean201617.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 
 all_columns = [
@@ -298,7 +314,7 @@ all_columns = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -368,10 +384,10 @@ silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inp
 silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
 silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-# jianying = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
-# ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
-# jiao_ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\semi-hard rock.tif')
-# songsan = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
+# hard_rock = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
+# weak_rock = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
+# semi_hard_rock = read_raster(r'RTS-evolution model driven data\categorical variables\semi-hard rock.tif')
+# loose_rock = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
 Distance_QTR = read_raster(
@@ -408,8 +424,8 @@ rasters = {
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
     "Time": Time,
@@ -475,10 +491,10 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
@@ -519,8 +535,8 @@ X201718 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
     FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
@@ -548,7 +564,7 @@ y_clean201718 = y201718[~mask]
 # print("y201718 shape:", y_clean201718.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 all_columns = [
      'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
@@ -556,7 +572,7 @@ all_columns = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -616,8 +632,8 @@ rasters = {
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
     "Time": Time,
@@ -680,10 +696,10 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
@@ -724,8 +740,8 @@ X201819 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
     FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
@@ -753,7 +769,7 @@ y_clean201819 = y201819[~mask]
 # print("y201819 shape:", y_clean201819.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
 ]
 
 all_columns = [
@@ -762,7 +778,7 @@ all_columns = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -820,8 +836,8 @@ rasters = {
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
     "Time": Time,
@@ -883,10 +899,10 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
@@ -927,8 +943,8 @@ X201920 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
     FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
@@ -1065,7 +1081,7 @@ feature_names = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -1106,7 +1122,7 @@ Features_names = [
     "Max_Summer_Precipitation", "Max_Summer_Temperature", "Distance_Faults",
    'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', "jianying", "ruanruo", "jiao_ruanruo", "songsan",
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', "hard_rock", "weak_rock", "semi_hard_rock", "loose_rock",
     "Distance_QTR", "Bareland", "grassland", "meadow", "water_body", "wetland",
     "FDD", "TDD", "Ground_Ice", "ALT"
 ]
@@ -1216,8 +1232,8 @@ feature_names = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5', 'sand5_15', 'sand15_30', 'sand30_60', 'sand60_100', 'sand100_200',
     'clay0_5', 'clay5_15', 'clay15_30', 'clay30_60', 'clay60_100', 'clay100_200',
-    'silt0_5', 'silt5_15', 'silt15_30', 'silt30_60', 'silt60_100', 'silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo',
-    'Songsan',
+    'silt0_5', 'silt5_15', 'silt15_30', 'silt30_60', 'silt60_100', 'silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock',
+    'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -1295,10 +1311,10 @@ silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inp
 silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
 silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
+hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+weak_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+semi_hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+loose_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
 Distance_QTR = read_raster(
@@ -1332,8 +1348,8 @@ rasters = {
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
-    "silt100_200": silt100_200, "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "silt100_200": silt100_200, "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
     "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
     "binary_variable": binary_variable
@@ -1393,10 +1409,10 @@ silt15_30 = rasters["silt15_30"]
 silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
@@ -1438,8 +1454,8 @@ X202021 = np.column_stack([
     silt15_30.flatten(),
     silt30_60.flatten(),
     silt60_100.flatten(),
-    silt100_200.flatten(), jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    silt100_200.flatten(), hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
 
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
@@ -1811,7 +1827,7 @@ def main():
     landuse_2020, profile = read_raster(
         r'RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\inputs\RTS2020.tif')
     prob_2, _ = read_raster(
-        r'RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\inputs\RF occur prob for 2021.tif.tif')
+        r'RTSEvo model driving data and results\Experiment 3\Prediction for 2021 & 2022\inputs\RF occur prob for 2021.tif')
     prob_2 = np.nan_to_num(prob_2, nan=0)
     prob_2 = np.clip(prob_2, 0, 1)
 
