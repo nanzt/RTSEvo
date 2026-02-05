@@ -24,7 +24,7 @@ Calculates pixel-level RTS initiation probability using:
 Simulates RTS expansion through cellular automata with:
 - **Neighborhood effect**: Density-dependent growth
 - **Retrogressive erosion factor**: Process-based directional preference
-- **Stochastic component**: Random variability
+- **Stochastic factor**: Random variability
 - **Adaptive inertia**: Dynamic constraint to match areal demand
 
 **Mathematical formulation**:
@@ -53,7 +53,7 @@ Logistic Regression version of the RTS Evolution Model. The main executable scri
 -   Processes multi-temporal RTS driving datasets
 -   Performs feature selection using Recursive Feature Elimination with Cross-Validation (RFECV)
 -   Optimizes hyperparameters using Latin Hypercube Sampling
--   Generates RTS occurrence probability maps
+-   Generates RTS base occurrence probability maps
 -   Simulates RTS evolution using spatial allocation module
 
 **Usage:**
@@ -61,6 +61,15 @@ Logistic Regression version of the RTS Evolution Model. The main executable scri
 ```python
 python LR-EM.py
 ```
+```
+landuse_2021_predict = ca_simulation_optimized(
+            landuse_2020.copy(), prob_2, aspect,
+            target_areas=103587.75, max_iterations=100,
+            seed=seed, neighborhood_weight=neighborhood_weight, use_gpu=use_gpu
+        )
+```
+- target_areas: The total RTS area for the target simulation year.
+- max_iterations: Maximum number of iterations to reach the total area
 
 **Inputs Required:**
 
