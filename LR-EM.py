@@ -1,10 +1,26 @@
 """
-@Description：
-This study presents a novel dynamic evolution model for RTS that integrates machine learning with cellular automata.
-The principal contribution of this study lies in breaking through the constraints of traditional static susceptibility
-assessments. For the first time, it achieves regional-scale dynamic simulation and short-term forecasting of RTS.
-The proposed modular framework is readily transferable to the modelling and prediction of other thermokarst hazards,
-thereby providing a new tool for elucidating the cascading mechanisms of permafrost-degradation disasters.
+@Description: RTSEvo v1.0 - Logistic Regression-based Evolution Model (LR-EM)
+
+    'LR-EM.py' integrates three core components:
+    1. Feature Engineering and Machine Learning Module:
+       - Recursive Feature Elimination with Cross-Validation (RFECV) for optimal feature selection
+       - Logistic Regression classifier with Latin Hypercube Sampling (LHS) for hyperparameter optimization
+       - Multi-period training approach (2016-2020) capturing temporal dynamics of RTS expansion
+
+    2. Base Occurrence Probability Mapping
+
+    3. Constrained Spatial Allocation Module:
+       - Cellular Automata (CA) framework for iterative RTS expansion simulation
+       - Four dynamic factors integrated in total transition probability:
+         a) Base occurrence probability (from Logistic Regression)
+         b) Neighborhood effect (spatial contagion within N×N window)
+         c) Retrogressive erosion factor (directional headwall retreat based on slope aspect)
+         d) Stochastic factor
+       - Adaptive inertia coefficient ensuring target area demand is met
+       
+@Date: 2026-2-5
+
+@Website: https://permalab.science
 """
 from osgeo import gdal
 import rasterio
@@ -77,14 +93,14 @@ Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experime
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
 TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
 Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201609_201708mean.tif')
+NDVI201617 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201609_201708mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(
+precipitation_sum201617 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(
+Max_Summer_Precipitation201617 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(
+Max_Summer_Temperature201617 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708Maximum Summer Temperature.tif')
 
 # Topography
@@ -109,10 +125,10 @@ silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inp
 silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
 silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
+hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+weak_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+semi_hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+loose_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
 Distance_QTR = read_raster(
@@ -125,36 +141,36 @@ water_body = read_raster(r'RTSEvo model driving data and results\Experiment 2\in
 wetland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Wetland.tif')
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708FDD.tif')
-TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708TDD.tif')
+FDD201617 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708FDD.tif')
+TDD201617 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201609_201708TDD.tif')
 Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
 ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2016_2017.tif')
+Time201617 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2016_2017.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(
+binary_variable201617 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2016-2017expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
     "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
-    "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
-    "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
+    "NDVI201617": NDVI201617, "precipitation_sum201617": precipitation_sum201617, "Max_Summer_Precipitation201617": Max_Summer_Precipitation201617,
+    "Max_Summer_Temperature201617": Max_Summer_Temperature201617, "Distance_Faults": Distance_Faults,
     "sand0_5": sand0_5, "sand5_15": sand5_15, "sand15_30": sand15_30, "sand30_60": sand30_60, "sand60_100": sand60_100,
     "sand100_200": sand100_200,
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
-    "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "Time": Time,
-    "binary_variable": binary_variable
+    "FDD201617": FDD201617, "TDD201617": TDD201617, "Ground_Ice": Ground_Ice, "ALT": ALT,
+    "Time201617": Time201617,
+    "binary_variable201617": binary_variable201617
 }
 
 # Select the DEM as the reference raster to determine the size of the global mask;
@@ -189,10 +205,10 @@ South = rasters["South"]
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
 Distance_Lake = rasters["Distance_Lake"]
-NDVI = rasters["NDVI"]
-precipitation_sum = rasters["precipitation_sum"]
-Max_Summer_Precipitation = rasters["Max_Summer_Precipitation"]
-Max_Summer_Temperature = rasters["Max_Summer_Temperature"]
+NDVI201617 = rasters["NDVI201617"]
+precipitation_sum201617 = rasters["precipitation_sum201617"]
+Max_Summer_Precipitation201617 = rasters["Max_Summer_Precipitation201617"]
+Max_Summer_Temperature201617 = rasters["Max_Summer_Temperature201617"]
 Distance_Faults = rasters["Distance_Faults"]
 
 sand0_5 = rasters["sand0_5"]
@@ -216,21 +232,21 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
 meadow = rasters["meadow"]
 water_body = rasters["water_body"]
 wetland = rasters["wetland"]
-FDD = rasters["FDD"]
-TDD = rasters["TDD"]
+FDD201617 = rasters["FDD201617"]
+TDD201617 = rasters["TDD201617"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
-Time = rasters["Time"]
+Time201617 = rasters["Time201617"]
 
 n_samples = DEM.shape[0] * DEM.shape[1]
 
@@ -239,8 +255,8 @@ X201617 = np.column_stack([
     DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
     Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
-    TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
-    precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
+    TWI.flatten(), Distance_Lake.flatten(), NDVI201617.flatten(),
+    precipitation_sum201617.flatten(), Max_Summer_Precipitation201617.flatten(), Max_Summer_Temperature201617.flatten(),
     Distance_Faults.flatten(),
     sand0_5.flatten(),
     sand5_15.flatten(),
@@ -260,15 +276,15 @@ X201617 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
+    FDD201617.flatten(), TDD201617.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time201617.flatten()
 ])
 
 # Convert the dependent variable raster data to the target vector
-y201617 = binary_variable.flatten()
+y201617 = binary_variable201617.flatten()
 
 # Check if -9999 exists in y
 y_mask201617 = (y201617 == -9999) | (y201617 == -1)
@@ -289,19 +305,19 @@ y_clean201617 = y201617[~mask]
 # print("y201617 shape:", y_clean201617.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time201617'
 ]
 
 all_columns = [
      'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
-    'TWI', 'Distance_Lake', 'NDVI',
-    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'TWI', 'Distance_Lake', 'NDVI201617',
+    'Precipitation_sum201617', 'Max_Summer_Precipitation201617', 'Max_Summer_Temperature201617',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
-    'FDD', 'TDD', 'Ground_Ice', 'ALT',
-    'Time'
+    'FDD201617', 'TDD201617', 'Ground_Ice', 'ALT',
+    'Time201617'
 ]
 
 non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
@@ -317,103 +333,47 @@ for idx in non_categorical_indices:
 """
 """
 # Read RTS-driven data for 2017-2018
-# Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
-DEM = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\DEM.tif')
-slope = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\slope.tif')
-#aspect
-# flat = read_raster(r'RTS-evolution model driven data\categorical variables\flat slope.tif')
-# East = read_raster(r'RTS-evolution model driven data\categorical variables\East slope.tif')
-# Northeast = read_raster(r'RTS-evolution model driven data\categorical variables\Northeast slope.tif')
-# Southeast = read_raster(r'RTS-evolution model driven data\categorical variables\Southeast slope.tif')
-# North = read_raster(r'RTS-evolution model driven data\categorical variables\North slope.tif')
-# West = read_raster(r'RTS-evolution model driven data\categorical variables\west slope.tif')
-# Northwest = read_raster(r'RTS-evolution model driven data\categorical variables\Northwest slope.tif')
-# Southwest = read_raster(r'RTS-evolution model driven data\categorical variables\Southwest slope.tif')
-# South = read_raster(r'RTS-evolution model driven data\categorical variables\South slope.tif')
 
-Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Profile Curvature.tif')
-
-# Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
-Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201709_201808mean.tif')
+NDVI201718 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201709_201808mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(
+precipitation_sum201718 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(
+Max_Summer_Precipitation201718 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(
+Max_Summer_Temperature201718 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808Maximum Summer Temperature.tif')
 
-# Topography
-Distance_Faults = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Fault.tif')
-# soil_texture
-sand0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand0_5.tif')
-sand5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand5_15.tif')
-sand15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand15_30.tif')
-sand30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand30_60.tif')
-sand60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand60_100.tif')
-sand100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\sand100_200.tif')
-clay0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay0_5.tif')
-clay5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay5_15.tif')
-clay15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay15_30.tif')
-clay30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay30_60.tif')
-clay60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay60_100.tif')
-clay100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\clay100_200.tif')
-silt0_5 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt0_5.tif')
-silt5_15 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt5_15.tif')
-silt15_30 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt15_30.tif')
-silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt30_60.tif')
-silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
-silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
-# Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-# jianying = read_raster(r'RTS-evolution model driven data\categorical variables\hard rock.tif')
-# ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\weak rock.tif')
-# jiao_ruanruo = read_raster(r'RTS-evolution model driven data\categorical variables\semi-hard rock.tif')
-# songsan = read_raster(r'RTS-evolution model driven data\categorical variables\loose rock.tif')
-
-# anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
-Distance_QTR = read_raster(
-    r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Qinghai-Tibet Railway.tif')
-# LULC
-# Bareland = read_raster(r'RTS-evolution model driven data\categorical variables\bareland.tif')
-# grassland = read_raster(r'RTS-evolution model driven data\categorical variables\grassland.tif')
-# meadow = read_raster(r'RTS-evolution model driven data\categorical variables\meadow.tif')
-# water_body = read_raster(r'RTS-evolution model driven data\categorical variables\Water_body.tif')
-# wetland = read_raster(r'RTS-evolution model driven data\categorical variables\Wetland.tif')
-
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808FDD.tif')
-TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808TDD.tif')
-Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
-ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
+FDD201718 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808FDD.tif')
+TDD201718 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201709_201808TDD.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2017_2018.tif')
+Time201718 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2017_2018.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(
+binary_variable201718 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2017-2018expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
     "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
-    "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
-    "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
+    "NDVI201718": NDVI201718, "precipitation_sum201718": precipitation_sum201718,
+    "Max_Summer_Precipitation201718": Max_Summer_Precipitation201718,
+    "Max_Summer_Temperature201718": Max_Summer_Temperature201718, "Distance_Faults": Distance_Faults,
     "sand0_5": sand0_5, "sand5_15": sand5_15, "sand15_30": sand15_30, "sand30_60": sand30_60, "sand60_100": sand60_100,
     "sand100_200": sand100_200,
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
-    "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "Time": Time,
-    "binary_variable": binary_variable
+    "FDD201718": FDD201718, "TDD201718": TDD201718, "Ground_Ice": Ground_Ice, "ALT": ALT,
+    "Time201718": Time201718,
+    "binary_variable201718": binary_variable201718
 }
 
 reference_raster = rasters["DEM"]
@@ -448,10 +408,10 @@ South = rasters["South"]
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
 Distance_Lake = rasters["Distance_Lake"]
-NDVI = rasters["NDVI"]
-precipitation_sum = rasters["precipitation_sum"]
-Max_Summer_Precipitation = rasters["Max_Summer_Precipitation"]
-Max_Summer_Temperature = rasters["Max_Summer_Temperature"]
+NDVI201718 = rasters["NDVI201718"]
+precipitation_sum201718 = rasters["precipitation_sum201718"]
+Max_Summer_Precipitation201718 = rasters["Max_Summer_Precipitation201718"]
+Max_Summer_Temperature201718 = rasters["Max_Summer_Temperature201718"]
 Distance_Faults = rasters["Distance_Faults"]
 
 sand0_5 = rasters["sand0_5"]
@@ -475,21 +435,21 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
 meadow = rasters["meadow"]
 water_body = rasters["water_body"]
 wetland = rasters["wetland"]
-FDD = rasters["FDD"]
-TDD = rasters["TDD"]
+FDD201718 = rasters["FDD201718"]
+TDD201718 = rasters["TDD201718"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
-Time = rasters["Time"]
+Time201718 = rasters["Time201718"]
 
 n_samples = DEM.shape[0] * DEM.shape[1]
 
@@ -498,8 +458,8 @@ X201718 = np.column_stack([
     DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
     Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
-    TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
-    precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
+    TWI.flatten(), Distance_Lake.flatten(), NDVI201718.flatten(),
+    precipitation_sum201718.flatten(), Max_Summer_Precipitation201718.flatten(), Max_Summer_Temperature201718.flatten(),
     Distance_Faults.flatten(),
     sand0_5.flatten(),
     sand5_15.flatten(),
@@ -519,15 +479,15 @@ X201718 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
+    FDD201718.flatten(), TDD201718.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time201718.flatten()
 ])
 
 # Convert the dependent variable raster data to the target vector
-y201718 = binary_variable.flatten()
+y201718 = binary_variable201718.flatten()
 
 # Check if -9999 exists in y
 y_mask201718 = (y201718 == -9999) | (y201718 == -1)
@@ -548,18 +508,18 @@ y_clean201718 = y201718[~mask]
 # print("y201718 shape:", y_clean201718.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time201718'
 ]
 all_columns = [
      'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
-    'TWI', 'Distance_Lake', 'NDVI',
-    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'TWI', 'Distance_Lake', 'NDVI201718',
+    'Precipitation_sum201718', 'Max_Summer_Precipitation201718', 'Max_Summer_Temperature201718',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
-    'FDD', 'TDD', 'Ground_Ice', 'ALT',
-    'Time'
+    'FDD201718', 'TDD201718', 'Ground_Ice', 'ALT',
+    'Time201718'
 ]
 non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
 non_categorical_indices = [all_columns.index(col) for col in non_categorical_columns]
@@ -577,51 +537,46 @@ for idx in non_categorical_indices:
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201809_201908mean.tif')
+NDVI201819 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201809_201908mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(
+precipitation_sum201819 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(
+Max_Summer_Precipitation201819 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(
+Max_Summer_Temperature201819 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908Maximum Summer Temperature.tif')
 
-# Topography
-# soil_texture
-# Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-# anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
-# LULC
-
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908FDD.tif')
-TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908TDD.tif')
+FDD201819 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908FDD.tif')
+TDD201819 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201809_201908TDD.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2018_2019.tif')
+Time201819 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2018_2019.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(
+binary_variable201819 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2018-2019expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
     "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
-    "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
-    "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
+    "NDVI201819": NDVI201819, "precipitation_sum201819": precipitation_sum201819,
+    "Max_Summer_Precipitation201819": Max_Summer_Precipitation201819,
+    "Max_Summer_Temperature201819": Max_Summer_Temperature201819, "Distance_Faults": Distance_Faults,
     "sand0_5": sand0_5, "sand5_15": sand5_15, "sand15_30": sand15_30, "sand30_60": sand30_60, "sand60_100": sand60_100,
     "sand100_200": sand100_200,
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
-    "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "Time": Time,
-    "binary_variable": binary_variable
+    "FDD201819": FDD201819, "TDD201819": TDD201819, "Ground_Ice": Ground_Ice, "ALT": ALT,
+    "Time201819": Time201819,
+    "binary_variable201819": binary_variable201819
 }
 
 reference_raster = rasters["DEM"]
@@ -653,10 +608,10 @@ South = rasters["South"]
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
 Distance_Lake = rasters["Distance_Lake"]
-NDVI = rasters["NDVI"]
-precipitation_sum = rasters["precipitation_sum"]
-Max_Summer_Precipitation = rasters["Max_Summer_Precipitation"]
-Max_Summer_Temperature = rasters["Max_Summer_Temperature"]
+NDVI201819 = rasters["NDVI201819"]
+precipitation_sum201819 = rasters["precipitation_sum201819"]
+Max_Summer_Precipitation201819 = rasters["Max_Summer_Precipitation201819"]
+Max_Summer_Temperature201819 = rasters["Max_Summer_Temperature201819"]
 Distance_Faults = rasters["Distance_Faults"]
 
 sand0_5 = rasters["sand0_5"]
@@ -680,21 +635,21 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
 meadow = rasters["meadow"]
 water_body = rasters["water_body"]
 wetland = rasters["wetland"]
-FDD = rasters["FDD"]
-TDD = rasters["TDD"]
+FDD201819 = rasters["FDD201819"]
+TDD201819 = rasters["TDD201819"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
-Time = rasters["Time"]
+Time201819 = rasters["Time201819"]
 
 n_samples = DEM.shape[0] * DEM.shape[1]
 
@@ -703,8 +658,8 @@ X201819 = np.column_stack([
     DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
     Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
-    TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
-    precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
+    TWI.flatten(), Distance_Lake.flatten(), NDVI201819.flatten(),
+    precipitation_sum201819.flatten(), Max_Summer_Precipitation201819.flatten(), Max_Summer_Temperature201819.flatten(),
     Distance_Faults.flatten(),
     sand0_5.flatten(),
     sand5_15.flatten(),
@@ -724,15 +679,15 @@ X201819 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
+    FDD201819.flatten(), TDD201819.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time201819.flatten()
 ])
 
 # Convert the dependent variable raster data to the target vector
-y201819 = binary_variable.flatten()
+y201819 = binary_variable201819.flatten()
 
 # Check if -9999 exists in y
 y_mask201819 = (y201819 == -9999) | (y201819 == -1)
@@ -753,19 +708,19 @@ y_clean201819 = y201819[~mask]
 # print("y201819 shape:", y_clean201819.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time201819'
 ]
 
 all_columns = [
      'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
-    'TWI', 'Distance_Lake', 'NDVI',
-    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'TWI', 'Distance_Lake', 'NDVI201819',
+    'Precipitation_sum201819', 'Max_Summer_Precipitation201819', 'Max_Summer_Temperature201819',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
-    'FDD', 'TDD', 'Ground_Ice', 'ALT',
-    'Time'
+    'FDD201819', 'TDD201819', 'Ground_Ice', 'ALT',
+    'Time201819'
 ]
 non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
 non_categorical_indices = [all_columns.index(col) for col in non_categorical_columns]
@@ -781,14 +736,14 @@ for idx in non_categorical_indices:
 # Reading topographic factors: DEM, slope, aspect (flat, north, northeast, east, northwest, west, southeast, southwest, south), and profile curvature.
 
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
-NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201909_202008mean.tif')
+NDVI201920 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI201909_202008mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(
+precipitation_sum201920 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(
+Max_Summer_Precipitation201920 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(
+Max_Summer_Temperature201920 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008Maximum Summer Temperature.tif')
 
 # Topography
@@ -798,34 +753,35 @@ Max_Summer_Temperature = read_raster(
 # LULC
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008FDD.tif')
-TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008TDD.tif')
+FDD201920 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008FDD.tif')
+TDD201920 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\201909_202008TDD.tif')
 
 # The Time feature is used to index the driving dataset of RTS expansion between every two years
-Time = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2019_2020.tif')
+Time201920 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2020 Time raster\2019_2020.tif')
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(
+binary_variable201920 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\2016-2022 RTS Expansion Raster\2019-2020expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
     "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
-    "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
-    "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
+    "NDVI201920": NDVI201920, "precipitation_sum201920": precipitation_sum201920,
+    "Max_Summer_Precipitation201920": Max_Summer_Precipitation201920,
+    "Max_Summer_Temperature201920": Max_Summer_Temperature201920, "Distance_Faults": Distance_Faults,
     "sand0_5": sand0_5, "sand5_15": sand5_15, "sand15_30": sand15_30, "sand30_60": sand30_60, "sand60_100": sand60_100,
     "sand100_200": sand100_200,
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
     "silt100_200": silt100_200,
-    "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
-    "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "Time": Time,
-    "binary_variable": binary_variable
+    "FDD201920": FDD201920, "TDD201920": TDD201920, "Ground_Ice": Ground_Ice, "ALT": ALT,
+    "Time201920": Time201920,
+    "binary_variable201920": binary_variable201920
 }
 
 reference_raster = rasters["DEM"]
@@ -856,10 +812,10 @@ South = rasters["South"]
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
 Distance_Lake = rasters["Distance_Lake"]
-NDVI = rasters["NDVI"]
-precipitation_sum = rasters["precipitation_sum"]
-Max_Summer_Precipitation = rasters["Max_Summer_Precipitation"]
-Max_Summer_Temperature = rasters["Max_Summer_Temperature"]
+NDVI201920 = rasters["NDVI201920"]
+precipitation_sum201920 = rasters["precipitation_sum201920"]
+Max_Summer_Precipitation201920 = rasters["Max_Summer_Precipitation201920"]
+Max_Summer_Temperature201920 = rasters["Max_Summer_Temperature201920"]
 Distance_Faults = rasters["Distance_Faults"]
 
 sand0_5 = rasters["sand0_5"]
@@ -883,21 +839,21 @@ silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
 
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
 meadow = rasters["meadow"]
 water_body = rasters["water_body"]
 wetland = rasters["wetland"]
-FDD = rasters["FDD"]
-TDD = rasters["TDD"]
+FDD201920 = rasters["FDD201920"]
+TDD201920 = rasters["TDD201920"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
-Time = rasters["Time"]
+Time201920 = rasters["Time201920"]
 
 n_samples = DEM.shape[0] * DEM.shape[1]
 
@@ -906,8 +862,8 @@ X201920 = np.column_stack([
     DEM.flatten(), slope.flatten(), flat.flatten(), East.flatten(), Northeast.flatten(),
     Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
-    TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
-    precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
+    TWI.flatten(), Distance_Lake.flatten(), NDVI201920.flatten(),
+    precipitation_sum201920.flatten(), Max_Summer_Precipitation201920.flatten(), Max_Summer_Temperature201920.flatten(),
     Distance_Faults.flatten(),
     sand0_5.flatten(),
     sand5_15.flatten(),
@@ -927,15 +883,15 @@ X201920 = np.column_stack([
     silt30_60.flatten(),
     silt60_100.flatten(),
     silt100_200.flatten(),
-    jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time.flatten()
+    FDD201920.flatten(), TDD201920.flatten(), Ground_Ice.flatten(), ALT.flatten(), Time201920.flatten()
 ])
 
 # Convert the dependent variable raster data to the target vector
-y201920 = binary_variable.flatten()
+y201920 = binary_variable201920.flatten()
 
 # Check if -9999 exists in y
 y_mask201920 = (y201920 == -9999) | (y201920 == -1)
@@ -956,19 +912,19 @@ y_clean201920 = y201920[~mask]
 # print("y201920 shape:", y_clean201920.shape)
 categorical_columns = [
     'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South',
-   'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time'
+   'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock','Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland', 'Time201920'
 ]
 
 all_columns = [
      'DEM', 'Slope', 'flat', 'East', 'Northeast', 'Southeast', 'North', 'West', 'Northwest', 'Southwest', 'South', 'Profile_Curvature',
-    'TWI', 'Distance_Lake', 'NDVI',
-    'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
+    'TWI', 'Distance_Lake', 'NDVI201920',
+    'Precipitation_sum201920', 'Max_Summer_Precipitation201920', 'Max_Summer_Temperature201920',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
-    'FDD', 'TDD', 'Ground_Ice', 'ALT',
-    'Time'
+    'FDD201920', 'TDD201920', 'Ground_Ice', 'ALT',
+    'Time201920'
 ]
 
 non_categorical_columns = [col for col in all_columns if col not in categorical_columns]
@@ -1089,7 +1045,7 @@ feature_names = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo', 'Songsan',
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock', 'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -1105,6 +1061,7 @@ y_notime = y_combined
 
 X_train, X_test, y_train, y_test = train_test_split(X_notime, y_notime, test_size=0.3, random_state=42)
 # 1.Initialize the Random Forest classifier
+
 rf = RandomForestClassifier(random_state=42)
 
 # 2. Create RFECV object
@@ -1130,7 +1087,7 @@ Features_names = [
     "Max_Summer_Precipitation", "Max_Summer_Temperature", "Distance_Faults",
    'sand0_5','sand5_15','sand15_30','sand30_60','sand60_100','sand100_200',
     'clay0_5','clay5_15','clay15_30','clay30_60','clay60_100','clay100_200',
-    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', "jianying", "ruanruo", "jiao_ruanruo", "songsan",
+    'silt0_5','silt5_15','silt15_30','silt30_60', 'silt60_100','silt100_200', "hard_rock", "weak_rock", "semi_hard_rock", "loose_rock",
     "Distance_QTR", "Bareland", "grassland", "meadow", "water_body", "wetland",
     "FDD", "TDD", "Ground_Ice", "ALT"
 ]
@@ -1176,10 +1133,12 @@ plt.figure()
 #
 # plt.legend(loc="lower right")
 # plt.show()
-
 # Retrain the model using the selected feature subset
 selected_features =  selected_features_names
 support = rfecv.support_
+
+
+
 time_index = feature_names.index('Time')
 
 # Extract the Time feature from X_combined as the grouping criterion
@@ -1207,7 +1166,7 @@ continuous_params = ['C', 'max_iter']
 categorical_params = ['solver', 'penalty']
 
 # Generate Latin Hypercube Samples
-n_samples = 100
+n_samples = 2
 n_continuous_params = len(continuous_params)
 lhs_samples = lhs(n_continuous_params, samples=n_samples, criterion='maximin')
 
@@ -1283,8 +1242,8 @@ feature_names = [
     'Precipitation_sum', 'Max_Summer_Precipitation', 'Max_Summer_Temperature',
     'Distance_Faults', 'sand0_5', 'sand5_15', 'sand15_30', 'sand30_60', 'sand60_100', 'sand100_200',
     'clay0_5', 'clay5_15', 'clay15_30', 'clay30_60', 'clay60_100', 'clay100_200',
-    'silt0_5', 'silt5_15', 'silt15_30', 'silt30_60', 'silt60_100', 'silt100_200', 'Jianying', 'Ruanruo', 'Jiao_ruanruo',
-    'Songsan',
+    'silt0_5', 'silt5_15', 'silt15_30', 'silt30_60', 'silt60_100', 'silt100_200', 'hard_rock', 'weak_rock', 'semi_hard_rock',
+    'loose_rock',
     'Distance_QTR', 'Bareland', 'Grassland', 'Meadow', 'Water_body', 'Wetland',
     'FDD', 'TDD', 'Ground_Ice', 'ALT',
     'Time'
@@ -1295,11 +1254,16 @@ time_index = feature_names.index('Time')
 X_notime = np.delete(X_combined, time_index, axis=1)
 y_notime = y_combined
 
-selected_features = selected_features_names
 
+# 获取特征索引并提取数据
+feature_indices = [Features_names.index(f) for f in selected_features]
+X_selected = X_notime[:, feature_indices]
+
+selected_features = selected_features_names
 X_selected = X_notime[:, rfecv.support_]
 
 X_train2, X_test2, y_train2, y_test2 = train_test_split(X_selected, y_notime, test_size=0.3, random_state=42)
+
 feature_indices = [Features_names.index(f) for f in selected_features]
 X_selected = X_notime[:, feature_indices]
 LR_model = LogisticRegression(**best_params, random_state=42)
@@ -1327,14 +1291,14 @@ Profile_Curvature = read_raster(r'RTSEvo model driving data and results\Experime
 # Hydrological Vegetation：TWI, Distance to Rivers and Lakes, NDVI
 TWI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\TWI.tif')
 Distance_Lake = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Distance from Lake.tif')
-NDVI = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI202009_202108mean.tif')
+NDVI202021 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\NDVI202009_202108mean.tif')
 
 # Climate factors: Cumulative precipitation , Maximum precipitation, Highest temperature in summer
-precipitation_sum = read_raster(
+precipitation_sum202021 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Cumulative Precipitation.tif')
-Max_Summer_Precipitation = read_raster(
+Max_Summer_Precipitation202021 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Maximum Summer Precipitation.tif')
-Max_Summer_Temperature = read_raster(
+Max_Summer_Temperature202021 = read_raster(
     r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108Maximum Summer Temperature.tif')
 
 # Topography
@@ -1359,10 +1323,10 @@ silt30_60 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inp
 silt60_100 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt60_100.tif')
 silt100_200 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\silt100_200.tif')
 # Lithology: Hard rock、Weak rock 、Semi-Hard rock、 Loose rock
-jianying = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
-ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
-jiao_ruanruo = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
-songsan = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
+hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\hard rock.tif')
+weak_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\weak rock.tif')
+semi_hard_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\semi-hard rock.tif')
+loose_rock = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\loose rock.tif')
 
 # anthropogenic factors: Distance to QTR  LULC(grassland、meadow、water body、wetland、bare land)
 Distance_QTR = read_raster(
@@ -1375,32 +1339,33 @@ water_body = read_raster(r'RTSEvo model driving data and results\Experiment 2\in
 wetland = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Categorical variables\Wetland.tif')
 
 # permafrost characteristics（FDD、TDD、Ground Ice Content、Active layer thickness）
-FDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108FDD.tif')
-TDD = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108TDD.tif')
+FDD202021 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108FDD.tif')
+TDD202021 = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\202009_202108TDD.tif')
 Ground_Ice = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Ground ice content.tif')
 ALT = read_raster(r'RTSEvo model driving data and results\Experiment 2\inputs\Numerical variables\Active layer thickness.tif')
 
 
 #The binary_variable is the RTS expansion raster data for two consecutive years
-binary_variable = read_raster(
+binary_variable202021 = read_raster(
     r'RTSEvo model driving data and results/Experiment 2/inputs/2016-2022 RTS Expansion Raster\2020-2021expansion.tif')
 
 rasters = {
     "DEM": DEM, "slope": slope, "flat": flat, "East": East, "Northeast": Northeast,
     "Southeast": Southeast, "North": North, "West": West, "Northwest": Northwest, "Southwest": Southwest, "South": South,
     "Profile_Curvature": Profile_Curvature, "TWI": TWI, "Distance_Lake": Distance_Lake,
-    "NDVI": NDVI, "precipitation_sum": precipitation_sum, "Max_Summer_Precipitation": Max_Summer_Precipitation,
-    "Max_Summer_Temperature": Max_Summer_Temperature, "Distance_Faults": Distance_Faults,
+    "NDVI202021": NDVI202021, "precipitation_sum202021": precipitation_sum202021,
+    "Max_Summer_Precipitation202021": Max_Summer_Precipitation202021,
+    "Max_Summer_Temperature202021": Max_Summer_Temperature202021, "Distance_Faults": Distance_Faults,
     "sand0_5": sand0_5, "sand5_15": sand5_15, "sand15_30": sand15_30, "sand30_60": sand30_60, "sand60_100": sand60_100,
     "sand100_200": sand100_200,
     "clay0_5": clay0_5, "clay5_15": clay5_15, "clay15_30": clay15_30, "clay30_60": clay30_60, "clay60_100": clay60_100,
     "clay100_200": clay100_200,
     "silt0_5": silt0_5, "silt5_15": silt5_15, "silt15_30": silt15_30, "silt30_60": silt30_60, "silt60_100": silt60_100,
-    "silt100_200": silt100_200, "jianying": jianying, "ruanruo": ruanruo, "jiao_ruanruo": jiao_ruanruo,
-    "songsan": songsan, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
+    "silt100_200": silt100_200, "hard_rock": hard_rock, "weak_rock": weak_rock, "semi_hard_rock": semi_hard_rock,
+    "loose_rock": loose_rock, "Distance_QTR": Distance_QTR, "Bareland": Bareland, "grassland": grassland, "meadow": meadow,
     "water_body": water_body, "wetland": wetland,
-    "FDD": FDD, "TDD": TDD, "Ground_Ice": Ground_Ice, "ALT": ALT,
-    "binary_variable": binary_variable
+    "FDD202021": FDD202021, "TDD202021": TDD202021, "Ground_Ice": Ground_Ice, "ALT": ALT,
+    "binary_variable202021": binary_variable202021
 }
 
 reference_raster = rasters["DEM"]
@@ -1432,10 +1397,10 @@ South = rasters["South"]
 Profile_Curvature = rasters["Profile_Curvature"]
 TWI = rasters["TWI"]
 Distance_Lake = rasters["Distance_Lake"]
-NDVI = rasters["NDVI"]
-precipitation_sum = rasters["precipitation_sum"]
-Max_Summer_Precipitation = rasters["Max_Summer_Precipitation"]
-Max_Summer_Temperature = rasters["Max_Summer_Temperature"]
+NDVI202021 = rasters["NDVI202021"]
+precipitation_sum202021 = rasters["precipitation_sum202021"]
+Max_Summer_Precipitation202021 = rasters["Max_Summer_Precipitation202021"]
+Max_Summer_Temperature202021 = rasters["Max_Summer_Temperature202021"]
 Distance_Faults = rasters["Distance_Faults"]
 sand0_5 = rasters["sand0_5"]
 sand5_15 = rasters["sand5_15"]
@@ -1457,18 +1422,18 @@ silt15_30 = rasters["silt15_30"]
 silt30_60 = rasters["silt30_60"]
 silt60_100 = rasters["silt60_100"]
 silt100_200 = rasters["silt100_200"]
-jianying = rasters["jianying"]
-ruanruo = rasters["ruanruo"]
-jiao_ruanruo = rasters["jiao_ruanruo"]
-songsan = rasters["songsan"]
+hard_rock = rasters["hard_rock"]
+weak_rock = rasters["weak_rock"]
+semi_hard_rock = rasters["semi_hard_rock"]
+loose_rock = rasters["loose_rock"]
 Distance_QTR = rasters["Distance_QTR"]
 Bareland = rasters["Bareland"]
 grassland = rasters["grassland"]
 meadow = rasters["meadow"]
 water_body = rasters["water_body"]
 wetland = rasters["wetland"]
-FDD = rasters["FDD"]
-TDD = rasters["TDD"]
+FDD202021 = rasters["FDD202021"]
+TDD202021 = rasters["TDD202021"]
 Ground_Ice = rasters["Ground_Ice"]
 ALT = rasters["ALT"]
 
@@ -1480,9 +1445,9 @@ X202021 = np.column_stack([
     Southeast.flatten(), North.flatten(), West.flatten(), Northwest.flatten(), Southwest.flatten(), South.flatten(),
     Profile_Curvature.flatten(),
 
-    TWI.flatten(), Distance_Lake.flatten(), NDVI.flatten(),
+    TWI.flatten(), Distance_Lake.flatten(), NDVI202021.flatten(),
 
-    precipitation_sum.flatten(), Max_Summer_Precipitation.flatten(), Max_Summer_Temperature.flatten(),
+    precipitation_sum202021.flatten(), Max_Summer_Precipitation202021.flatten(), Max_Summer_Temperature202021.flatten(),
 
     Distance_Faults.flatten(), sand0_5.flatten(),
     sand5_15.flatten(),
@@ -1501,17 +1466,17 @@ X202021 = np.column_stack([
     silt15_30.flatten(),
     silt30_60.flatten(),
     silt60_100.flatten(),
-    silt100_200.flatten(), jianying.flatten(),
-    ruanruo.flatten(), jiao_ruanruo.flatten(), songsan.flatten(),
+    silt100_200.flatten(), hard_rock.flatten(),
+    weak_rock.flatten(), semi_hard_rock.flatten(), loose_rock.flatten(),
 
     Distance_QTR.flatten(), Bareland.flatten(), grassland.flatten(), meadow.flatten(), water_body.flatten(),
     wetland.flatten(),
 
-    FDD.flatten(), TDD.flatten(), Ground_Ice.flatten(), ALT.flatten()
+    FDD202021.flatten(), TDD202021.flatten(), Ground_Ice.flatten(), ALT.flatten()
 ])
 
 
-y202021 = binary_variable.flatten()
+y202021 = binary_variable202021.flatten()
 
 y_mask202021 = (y202021 == -9999)
 
