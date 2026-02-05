@@ -7,7 +7,7 @@
        - Random Forest classifier with Latin Hypercube Sampling (LHS) for hyperparameter optimization
        - Multi-period training approach (2016-2020) capturing temporal dynamics of RTS expansion
 
-    2. Base Occurrence Probability Mapping:
+    2. Base Occurrence Probability Mapping
 
     3. Constrained Spatial Allocation Module:
        - Cellular Automata (CA) framework for iterative RTS expansion simulation
