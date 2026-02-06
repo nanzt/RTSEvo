@@ -61,15 +61,6 @@ Logistic Regression version of the RTS Evolution Model. The main executable scri
 ```python
 python LR-EM.py
 ```
-```
-landuse_2021_predict = ca_simulation_optimized(
-            landuse_2020.copy(), prob_2, aspect,
-            target_areas=103587.75, max_iterations=100,
-            seed=seed, neighborhood_weight=neighborhood_weight, use_gpu=use_gpu
-        )
-```
-- target_areas: The total RTS area for the target simulation year.
-- max_iterations: Maximum number of iterations to reach the total area
 
 **Inputs Required:**
 
