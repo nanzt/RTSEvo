@@ -209,7 +209,7 @@ If you use this model or code in your research, please cite our paper and this r
 ```
 Xu, J., Zhao, S., Nan, Z., Niu, F., and Zhang, Y.: RTSEvo v1.0: A Retrogressive Thaw Slump Evolution Model, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2025-5005, 2025.
 
-Jiwei Xu and Zhuotong Nan, RTSEvo (v1.0): A retrogressive thaw slump evolution model, https://doi.org/10.5281/zenodo.17850641, 2025
+Jiwei Xu and Zhuotong Nan, RTSEvo v1.0: A retrogressive thaw slump evolution model, Zenodo, https://doi.org/10.5281/zenodo.17850641, 2026
 ```
 
 ## License
