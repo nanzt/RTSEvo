@@ -137,7 +137,7 @@ Ensure all driving factor rasters are at 10m resolution with consistent projecti
 -   **Permafrost:** FDD, TDD, ground ice content, active layer thickness
 -   **Anthropogenic:** Distance to railway, Land use/land cover
 
-**The datasets are available via https://doi.org/10.6084/m9.figshare.30325243.**
+The datasets for testing the codes are available via https://doi.org/10.6084/m9.figshare.30325243. Note, the paths to the datasets are currently hard-coded in the codes, and will be improved in a later version. 
 
 ### 2. Area Demand Forecasting
 
