@@ -18,7 +18,7 @@
          d) Stochastic factor
        - Adaptive inertia coefficient ensuring target area demand is met
        
-@Date: 2026-2-5
+@Date: Feb 5，2026
 
 @Website: https://permalab.science
 """
