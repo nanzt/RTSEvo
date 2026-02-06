@@ -5,7 +5,7 @@
     total regional RTS area for target years. It establishes a top-down, macro-scale constraint
     that governs the overall magnitude of RTS expansion in the spatial allocation module.
 
-@Date: 2026-2-5
+@Date: Feb 5，2026
 
 @Website: https://permalab.science
 """
