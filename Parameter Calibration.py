@@ -6,7 +6,7 @@
     to efficiently explore the multi-dimensional parameter space and identify optimal configurations
     that maximize simulation accuracy.
 
-@Date: 2026-2-5
+@Date: Feb 5，2026
 
 @Website: https://permalab.science
 """
