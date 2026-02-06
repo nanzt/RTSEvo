@@ -145,6 +145,7 @@ Ensure all driving factor rasters are at 10m resolution with consistent projecti
 -   **Hydrological:** TWI, distance to water bodies, NDVI
 -   **Permafrost:** FDD, TDD, ground ice content, active layer thickness
 -   **Anthropogenic:** Distance to railway, Land use/land cover
+#### The datasets are available via https://doi.org/10.6084/m9.figshare.30325243
 
 ### 2. Area Demand Forecasting
 
@@ -214,14 +215,14 @@ We also found including the retrogressive erosion factor in the model improves F
 If you use this model or code in your research, please cite our paper and this repository:
 
 ```
-[Paper citation details - To be added upon publication]
+[Paper citation details - Xu, J., Zhao, S., Nan, Z., Niu, F., and Zhang, Y.: RTSEvo v1.0: A Retrogressive Thaw Slump Evolution Model, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2025-5005, 2025.]
 
 Jiwei Xu and Zhuotong Nan, RTSEvo (v1.0): A retrogressive thaw slump evolution model, https://github.com/nanzt/RTSEvo
 ```
 
 ## License
 
-MIT License - See individual script headers for full license text.
+MIT License
 
 ## Contact
 
